@@ -56,7 +56,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("-i", "--interactive", action="store_true",
                         help="Force interactive mode even if flags are given.")
     parser.add_argument("--login", action="store_true",
-                        help="Login to X accounts and save sessions (no posting).")
+                        help="(Gunakan sessions.py) Login & simpan session.")
     parser.add_argument("--session", action="store_true",
                         help="Post using saved sessions instead of API keys.")
     return parser.parse_args(argv)
@@ -326,9 +326,12 @@ def _select_accounts_by_flags(
 def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
 
-    # --- Login mode: just login and save sessions, no posting ---
+    # --- Login mode: redirect to sessions.py ---
     if args.login:
-        return _handle_login()
+        print(c.warn("Untuk login, jalankan file terpisah:"))
+        print(f"  {c.info('python sessions.py')}")
+        print(f"  {c.info('python sessions.py --manual')}  (mode manual)")
+        return 0
 
     # --- Session posting mode ---
     if args.session:

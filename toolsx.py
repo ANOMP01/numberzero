@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
-"""toolsx - entry point for numberzero.
+"""toolsx.py - Posting ke X dari banyak akun sekaligus.
+
+Jalankan file ini untuk posting. Session harus sudah tersimpan
+(jalankan sessions.py dulu untuk login).
 
 Usage:
-    python toolsx.py                       # mode interaktif (menu step-by-step)
-    python toolsx.py -t "Halo" -m foto.jpg # mode cepat (flag)
-    python toolsx.py --help                # lihat semua opsi
+    python toolsx.py                                    # mode interaktif
+    python toolsx.py --session                          # posting via session
+    python toolsx.py --session -t "Halo" -m poster.jpg  # mode cepat
+    python toolsx.py --help                             # lihat semua opsi
 """
 
 from src.cli import main
