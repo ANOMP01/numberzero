@@ -9,11 +9,11 @@ cd /d "%~dp0"
 
 where python >nul 2>nul
 if %ERRORLEVEL%==0 (
-    python -m src.cli %*
+    python toolsx.py %*
 ) else (
     where py >nul 2>nul
     if %ERRORLEVEL%==0 (
-        py -3 -m src.cli %*
+        py -3 toolsx.py %*
     ) else (
         echo Error: Python tidak ditemukan. Install Python 3 dulu.
         exit /b 1

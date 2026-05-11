@@ -16,7 +16,9 @@ bash setup.sh            # macOS / Linux
 # lalu edit accounts.yaml, isi kredensial akun X kamu.
 
 # --- Sehari-hari ---
-./nz                     # macOS / Linux  (mode interaktif, paling mudah)
+python toolsx.py         # jalan di semua OS (Mac/Linux/Windows)
+# atau shortcut yang lebih pendek:
+./nz                     # macOS / Linux
 nz                       # Windows
 ```
 
@@ -25,7 +27,7 @@ dipandu lewat menu pilihan.
 
 Kalau mau satu-baris (tanpa menu):
 ```bash
-./nz -t "Event Sabtu 19.00!" -m ./media/images/poster.jpg
+python toolsx.py -t "Event Sabtu 19.00!" -m ./media/images/poster.jpg
 ```
 
 ## Fitur
@@ -106,6 +108,11 @@ Jalankan tanpa argumen, tool akan pandu kamu langkah-demi-langkah dengan menu
 pilihan (tulis teks, pilih media, pilih akun, konfirmasi):
 
 ```bash
+python toolsx.py
+```
+
+Atau pakai shortcut:
+```bash
 ./nz              # macOS / Linux
 nz                # Windows
 ```
@@ -135,13 +142,13 @@ Kalau sudah hafal, tinggal pakai flag:
 ### Post teks saja ke semua akun
 
 ```bash
-./nz --text "Jangan lupa datang ke Meetup Komunitas X, Sabtu jam 19.00!"
+python toolsx.py --text "Jangan lupa datang ke Meetup Komunitas X, Sabtu jam 19.00!"
 ```
 
 ### Post teks + 1 gambar
 
 ```bash
-./nz \
+python toolsx.py \
   --text "Poster event minggu ini." \
   --media ./media/images/poster.jpg
 ```
@@ -149,7 +156,7 @@ Kalau sudah hafal, tinggal pakai flag:
 ### Post teks + beberapa gambar (maks 4)
 
 ```bash
-./nz \
+python toolsx.py \
   -t "Throwback event kemarin." \
   -m ./media/images/img1.jpg -m ./media/images/img2.jpg
 ```
@@ -157,13 +164,13 @@ Kalau sudah hafal, tinggal pakai flag:
 ### Post video
 
 ```bash
-./nz -t "Aftermovie event" -m ./media/videos/aftermovie.mp4
+python toolsx.py -t "Aftermovie event" -m ./media/videos/aftermovie.mp4
 ```
 
 ### Pilih akun tertentu saja
 
 ```bash
-./nz -t "Halo" --accounts main,backup
+python toolsx.py -t "Halo" --accounts main,backup
 ```
 
 ### Atur berapa akun yang dipakai
@@ -173,8 +180,8 @@ nilainya di file itu untuk mengubah default secara permanen. Untuk override
 sekali jalan:
 
 ```bash
-./nz -t "Halo" --count 3       # pakai 3 akun pertama
-./nz -t "Halo" -n 1            # pakai 1 akun pertama
+python toolsx.py -t "Halo" --count 3       # pakai 3 akun pertama
+python toolsx.py -t "Halo" -n 1            # pakai 1 akun pertama
 ```
 
 Catatan: kalau `--accounts` diberikan, `--count` akan diabaikan (nama akun
@@ -183,7 +190,7 @@ lebih spesifik).
 ### Dry run (cek dulu tanpa post)
 
 ```bash
-./nz -t "Halo" --media ./media/images/poster.jpg --dry-run
+python toolsx.py -t "Halo" --media ./media/images/poster.jpg --dry-run
 ```
 
 ### Opsi lengkap
@@ -209,6 +216,7 @@ lebih spesifik).
 
 ```
 numberzero/
+├── toolsx.py               # entry point utama (python toolsx.py)
 ├── nz                      # shortcut CLI (macOS/Linux)
 ├── nz.bat                  # shortcut CLI (Windows)
 ├── setup.sh                # installer sekali jalan (macOS/Linux)
@@ -219,7 +227,7 @@ numberzero/
 │   └── videos/             # taruh video/GIF di sini
 ├── src/
 │   ├── __init__.py
-│   ├── cli.py              # entry point CLI + formatter log
+│   ├── cli.py              # logika CLI + formatter log
 │   ├── config.py           # load & validasi accounts.yaml
 │   ├── interactive.py      # menu step-by-step
 │   └── poster.py           # upload media + create tweet

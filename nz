@@ -22,4 +22,4 @@ else
     exit 1
 fi
 
-exec "$PY" -m src.cli "$@"
+exec "$PY" toolsx.py "$@"
