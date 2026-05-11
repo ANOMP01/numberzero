@@ -54,6 +54,28 @@ ikut ke-commit.
 
 ## Penggunaan
 
+### Siapkan folder media
+
+Sebelum posting, taruh file di folder yang sesuai:
+
+```
+numberzero/
+├── media/
+│   ├── images/   ← taruh .jpg / .png / .webp di sini
+│   └── videos/   ← taruh .mp4 / .mov / .gif di sini
+```
+
+Saat mode interaktif, tool akan otomatis membaca isi kedua folder itu dan
+menampilkannya sebagai menu bernomor — tinggal pilih angka, tidak perlu
+ketik path.
+
+Kalau mau pakai folder lain, ubah di `accounts.yaml`:
+
+```yaml
+images_dir: /Users/kamu/Pictures/event
+videos_dir: /Users/kamu/Movies/event
+```
+
 ### Mode interaktif (paling mudah)
 
 Jalankan tanpa argumen, tool akan pandu kamu langkah-demi-langkah dengan menu
@@ -63,49 +85,22 @@ pilihan (tulis teks, pilih media, pilih akun, konfirmasi):
 python -m src.cli
 ```
 
-Contoh tampilannya:
+Contoh tampilan langkah pilih media:
 
 ```
-========================================================
-  numberzero  |  multi-account X event poster
-========================================================
-
-[Langkah 1/4] Tulis isi tweet
---------------------------------------------------------
-Tweet : Meetup Komunitas X Sabtu 19.00, RSVP di bio!
-
 [Langkah 2/4] Lampirkan media?
 --------------------------------------------------------
   * 1) Tidak, teks saja
-    2) Ya, 1 gambar
-    3) Ya, beberapa gambar (maks 4)
-    4) Ya, 1 video / GIF
-Pilihan [1]: 2
-  Path file #1: ./poster.jpg
-
-[Langkah 3/4] Pilih akun yang akan memposting
---------------------------------------------------------
-Akun yang terdaftar di accounts.yaml:
-    1) @main
-    2) @event
-    3) @komunitas
-
-  * 1) Pakai default (2 akun pertama)
-    2) Pilih jumlah akun (ambil dari urutan teratas)
-    3) Pilih akun spesifik (ketik nomor/nama)
-    4) Semua akun
+    2) Gambar (dari folder gambar)
+    3) Video / GIF (dari folder video)
 Pilihan [1]: 3
-Ketik nomor/nama dipisah koma (contoh: 1,3 atau main,event): main,event
 
-[Langkah 4/4] Konfirmasi sebelum posting
---------------------------------------------------------
-Ringkasan:
-  Teks   : Meetup Komunitas X Sabtu 19.00, RSVP di bio!
-  Media  : 1 file
-           - poster.jpg
-  Target : 2 akun -> @main, @event
+File tersedia di media/videos/:
+   1) aftermovie.mp4         (48.2 MB)
+   2) teaser-10detik.mp4     (3.1 MB)
+   3) behindthescene.mov     (120.4 MB)
 
-Lanjutkan posting sekarang? [Y/n]:
+Ketik nomor video/GIF (hanya 1 file): 1
 ```
 
 ### Mode cepat (flag)
@@ -189,12 +184,16 @@ python -m src.cli -t "Halo" --media ./poster.jpg --dry-run
 
 ```
 numberzero/
-├── accounts.example.yaml   # template kredensial
+├── accounts.example.yaml   # template kredensial + setting folder media
 ├── requirements.txt
+├── media/
+│   ├── images/             # taruh gambar di sini
+│   └── videos/             # taruh video/GIF di sini
 ├── src/
 │   ├── __init__.py
-│   ├── cli.py              # entry point CLI
+│   ├── cli.py              # entry point CLI + formatter log
 │   ├── config.py           # load & validasi accounts.yaml
+│   ├── interactive.py      # menu step-by-step
 │   └── poster.py           # upload media + create tweet
 └── README.md
 ```

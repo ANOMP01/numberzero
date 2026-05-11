@@ -11,6 +11,11 @@ from pathlib import Path
 from .config import Account, Config
 
 
+# File extensions we support, grouped by media folder.
+IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+VIDEO_EXTS = {".mp4", ".mov"}
+
+
 # ---------- small display helpers ----------
 
 def _hr(char: str = "-", width: int = 56) -> str:
@@ -101,38 +106,115 @@ def ask_text() -> str:
         return text
 
 
-def ask_media() -> list[Path]:
+def _human_size(num_bytes: int) -> str:
+    size = float(num_bytes)
+    for unit in ("B", "KB", "MB", "GB"):
+        if size < 1024 or unit == "GB":
+            return f"{size:.0f} {unit}" if unit == "B" else f"{size:.1f} {unit}"
+        size /= 1024
+    return f"{size:.1f} GB"
+
+
+def _list_media_files(folder: Path, allowed_exts: set[str]) -> list[Path]:
+    """Return supported media files inside `folder`, sorted by name."""
+    if not folder.exists() or not folder.is_dir():
+        return []
+    files = [
+        p for p in folder.iterdir()
+        if p.is_file() and p.suffix.lower() in allowed_exts
+    ]
+    return sorted(files, key=lambda p: p.name.lower())
+
+
+def _show_file_menu(files: list[Path], folder: Path) -> None:
+    print(f"File tersedia di {folder}/:")
+    if not files:
+        print("  (folder kosong)")
+        return
+    for i, p in enumerate(files, 1):
+        try:
+            size = _human_size(p.stat().st_size)
+        except OSError:
+            size = "?"
+        print(f"  {i:>2}) {p.name}  ({size})")
+
+
+def _pick_files(files: list[Path], prompt: str, max_pick: int) -> list[Path]:
+    """Ask user for numbers (comma-separated) and return the chosen files."""
+    while True:
+        raw = _ask(prompt)
+        if not raw:
+            print("  -> minimal pilih satu file.")
+            continue
+
+        tokens = [t.strip() for t in raw.split(",") if t.strip()]
+        picked: list[Path] = []
+        seen: set[int] = set()
+        bad = False
+        for tok in tokens:
+            if not tok.isdigit():
+                print(f"  -> bukan angka: {tok!r}")
+                bad = True
+                break
+            idx = int(tok)
+            if not (1 <= idx <= len(files)):
+                print(f"  -> {idx} di luar jangkauan 1..{len(files)}")
+                bad = True
+                break
+            if idx in seen:
+                continue
+            seen.add(idx)
+            picked.append(files[idx - 1])
+
+        if bad or not picked:
+            continue
+        if len(picked) > max_pick:
+            print(f"  -> maksimal {max_pick} file. Pilih lagi.")
+            continue
+        return picked
+
+
+def ask_media(config: Config) -> list[Path]:
     step(2, 4, "Lampirkan media?")
     options = [
         "Tidak, teks saja",
-        "Ya, 1 gambar",
-        "Ya, beberapa gambar (maks 4)",
-        "Ya, 1 video / GIF",
+        "Gambar (dari folder gambar)",
+        "Video / GIF (dari folder video)",
     ]
     choice = _ask_choice("Pilihan", options, default=1)
 
     if choice == 1:
         return []
 
-    paths: list[Path] = []
-    if choice == 3:
-        n = _ask_int("Berapa gambar", default=2, minimum=1, maximum=4)
-    else:
-        n = 1
+    if choice == 2:
+        folder = config.images_dir
+        files = _list_media_files(folder, IMAGE_EXTS)
+        print()
+        _show_file_menu(files, folder)
+        if not files:
+            print(f"Taruh gambar di {folder}/ lalu jalankan lagi.")
+            return []
+        print()
+        return _pick_files(
+            files,
+            "Ketik nomor gambar (boleh lebih dari satu, dipisah koma; maks 4)",
+            max_pick=4,
+        )
 
-    for i in range(1, n + 1):
-        while True:
-            raw = _ask(f"  Path file #{i}")
-            if not raw:
-                print("  -> path tidak boleh kosong.")
-                continue
-            p = Path(raw).expanduser()
-            if not p.exists():
-                print(f"  -> file tidak ditemukan: {p}")
-                continue
-            paths.append(p)
-            break
-    return paths
+    # choice == 3: video / GIF
+    folder = config.videos_dir
+    files = _list_media_files(folder, VIDEO_EXTS | {".gif"})
+    print()
+    _show_file_menu(files, folder)
+    if not files:
+        print(f"Taruh video/GIF di {folder}/ lalu jalankan lagi.")
+        return []
+    print()
+    return _pick_files(
+        files,
+        "Ketik nomor video/GIF (hanya 1 file)",
+        max_pick=1,
+    )
 
 
 def ask_accounts(config: Config) -> list[Account]:

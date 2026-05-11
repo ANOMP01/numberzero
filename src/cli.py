@@ -138,7 +138,7 @@ def main(argv: list[str] | None = None) -> int:
     if _is_interactive_mode(args):
         banner()
         text = ask_text()
-        media_paths = ask_media()
+        media_paths = ask_media(config)
         selected = ask_accounts(config)
 
         if not text.strip() and not media_paths:

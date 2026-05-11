@@ -1,0 +1,4 @@
+# Taruh file video di folder ini (.mp4 / .mov) atau GIF animasi.
+# Isi folder ini akan otomatis tampil sebagai menu pilihan saat mode interaktif.
+#
+# Batas X untuk video: maks 2 menit 20 detik, 512 MB, format mp4/mov.

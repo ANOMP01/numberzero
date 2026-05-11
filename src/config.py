@@ -20,6 +20,10 @@ REQUIRED_FIELDS = (
 # Fallback when accounts.yaml does not set `default_count`.
 DEFAULT_ACCOUNT_COUNT = 2
 
+# Default media folders, relative to the project root.
+DEFAULT_IMAGES_DIR = "media/images"
+DEFAULT_VIDEOS_DIR = "media/videos"
+
 
 class ConfigError(Exception):
     """Raised when the accounts config file is missing or malformed."""
@@ -40,6 +44,8 @@ class Config:
 
     accounts: list[Account]
     default_count: int
+    images_dir: Path
+    videos_dir: Path
 
 
 def load_config(path: str | Path) -> Config:
@@ -98,7 +104,15 @@ def load_config(path: str | Path) -> Config:
     if default_count < 1:
         raise ConfigError("`default_count` must be at least 1.")
 
-    return Config(accounts=accounts, default_count=default_count)
+    images_dir = Path(str(data.get("images_dir", DEFAULT_IMAGES_DIR))).expanduser()
+    videos_dir = Path(str(data.get("videos_dir", DEFAULT_VIDEOS_DIR))).expanduser()
+
+    return Config(
+        accounts=accounts,
+        default_count=default_count,
+        images_dir=images_dir,
+        videos_dir=videos_dir,
+    )
 
 
 def load_accounts(path: str | Path) -> list[Account]:

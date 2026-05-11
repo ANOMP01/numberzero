@@ -9,6 +9,12 @@
 # --count on the CLI. Change this anytime.
 default_count: 2
 
+# Folder tempat menaruh file media. Bisa path relatif (terhadap folder project)
+# atau absolut. Saat mode interaktif, tool akan membaca isi folder ini dan
+# menampilkannya sebagai menu pilihan.
+images_dir: media/images
+videos_dir: media/videos
+
 accounts:
   - name: main
     api_key: "YOUR_API_KEY"
