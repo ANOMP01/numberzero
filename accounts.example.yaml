@@ -1,0 +1,19 @@
+# Copy this file to `accounts.yaml` and fill in the credentials for each X account.
+# Each account needs its own set of API keys from https://developer.x.com/
+# (Project -> App -> Keys and Tokens). The app must have "Read and Write" permissions.
+#
+# You can add as many accounts as you want. The `name` is a free-form label you
+# use to reference the account in the CLI (e.g. --accounts main,backup).
+
+accounts:
+  - name: main
+    api_key: "YOUR_API_KEY"
+    api_secret: "YOUR_API_SECRET"
+    access_token: "YOUR_ACCESS_TOKEN"
+    access_token_secret: "YOUR_ACCESS_TOKEN_SECRET"
+
+  - name: backup
+    api_key: "YOUR_API_KEY"
+    api_secret: "YOUR_API_SECRET"
+    access_token: "YOUR_ACCESS_TOKEN"
+    access_token_secret: "YOUR_ACCESS_TOKEN_SECRET"
