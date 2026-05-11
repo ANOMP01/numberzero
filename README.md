@@ -10,17 +10,18 @@ pribadi + akun komunitas + akun event).
 
 1. [Persiapan awal](#1-persiapan-awal)
 2. [Install project](#2-install-project)
-3. [Dapatkan kredensial API X](#3-dapatkan-kredensial-api-x)
-4. [Isi file `accounts.yaml`](#4-isi-file-accountsyaml)
+3. [Login & simpan session (CARA MUDAH)](#3-login--simpan-session-cara-mudah)
+4. [Posting via session](#4-posting-via-session)
 5. [Taruh gambar/video ke folder media](#5-taruh-gambarvideo-ke-folder-media)
 6. [Jalankan tool](#6-jalankan-tool)
 7. [Mode cepat (flag)](#7-mode-cepat-flag)
-8. [Menambah / menghapus akun](#8-menambah--menghapus-akun)
-9. [Mengatur jumlah akun default](#9-mengatur-jumlah-akun-default)
-10. [Aturan media X](#10-aturan-media-x)
-11. [Troubleshooting](#11-troubleshooting)
-12. [Struktur project](#12-struktur-project)
-13. [Catatan penting](#13-catatan-penting)
+8. [Cara alternatif: API resmi (opsional)](#8-cara-alternatif-api-resmi-opsional)
+9. [Menambah / menghapus akun](#9-menambah--menghapus-akun)
+10. [Mengatur jumlah akun default](#10-mengatur-jumlah-akun-default)
+11. [Aturan media X](#11-aturan-media-x)
+12. [Troubleshooting](#12-troubleshooting)
+13. [Struktur project](#13-struktur-project)
+14. [Catatan penting](#14-catatan-penting)
 
 ---
 
@@ -34,8 +35,8 @@ pribadi + akun komunitas + akun event).
   "Add Python to PATH"**.
 - **Git** (opsional) — untuk clone repo. Kalau tidak ada, bisa download ZIP
   dari GitHub.
-- **Akun X** yang kredensial API-nya sudah disiapkan (lihat
-  [langkah 3](#3-dapatkan-kredensial-api-x)).
+- **Akun X** yang mau dipakai (lihat
+  [langkah 3](#3-login--simpan-session-cara-mudah) untuk cara login).
 
 ---
 
@@ -66,18 +67,120 @@ yang akan menginstall dependensi dan menyiapkan file config sekaligus.
 
 ---
 
-## 3. Dapatkan kredensial API X
+## 3. Login & simpan session (CARA MUDAH)
 
-Setiap akun X butuh 4 kredensial API sendiri dari
-<https://developer.x.com/>. Ulangi langkah ini untuk **setiap** akun yang mau
-kamu pakai.
+Cara ini **tidak perlu daftar developer**, tidak perlu API key. Cukup
+email + password akun X yang mau dipakai.
 
-> **PENTING:** Sebelum mulai, **login ke x.com dengan akun yang mau didaftarkan
-> developernya.** Developer portal akan otomatis mengaitkan App ke akun yang
-> sedang login. Misal: kalau kamu lagi login sebagai `@akun_event`, App yang
-> dibuat akan jadi milik `@akun_event`.
+### 3.1 Install browser otomatis (sekali saja)
 
-### 3.1 Daftar sebagai developer (sekali saja per akun)
+Setelah install dependensi di langkah 2, jalankan:
+
+```bash
+python -m playwright install chromium
+```
+
+Ini download Chromium (~110 MB) yang dipakai untuk login. Cuma perlu sekali.
+
+**Windows:** kalau muncul error, coba jalankan PowerShell sebagai Administrator.
+
+### 3.2 Login akun satu per satu
+
+```bash
+python toolsx.py --login
+```
+
+Tool akan:
+1. Tanya nama akun (label bebas, misal: `main`, `event`, `backup`)
+2. Buka browser otomatis → halaman login X
+3. Kamu **login manual** di browser (ketik email + password + 2FA kalau ada)
+4. Setelah masuk Home, browser otomatis tutup
+5. Session tersimpan di `sessions/main.json`
+6. Tanya "Login akun lain?" → ketik `y` untuk lanjut ke akun berikutnya
+
+**Contoh alur:**
+```
+  Login & Simpan Session
+========================================================
+
+Kamu akan login ke akun X satu per satu lewat browser.
+Setelah login berhasil, session disimpan otomatis.
+
+Nama akun (ketik nama bebas, misal: main): main
+  Membuka browser untuk login akun: @main
+  Login secara manual (email + password).
+  Menunggu kamu login...
+  Session disimpan: sessions/main.json
+  Login @main berhasil & session tersimpan!
+
+Login akun lain? [y/N]: y
+Nama akun: event
+  Membuka browser...
+  ...
+  Login @event berhasil & session tersimpan!
+
+Login akun lain? [y/N]: n
+
+Total session tersimpan: 2
+  - @main (aktif)
+  - @event (aktif)
+```
+
+### 3.3 Berapa lama session bertahan?
+
+- Aktif dipakai (posting seminggu sekali): **1-3 bulan**
+- Tidak dipakai sama sekali: **~30 hari**
+- Kalau expired: jalankan `python toolsx.py --login` lagi
+
+### 3.4 Keamanan session
+
+Session disimpan di folder `sessions/` (otomatis di-`.gitignore`). File ini
+berisi cookies yang setara dengan "sudah login" — **jangan share ke orang
+lain**. Kalau file ini bocor, orang lain bisa posting dari akun kamu.
+
+---
+
+## 4. Posting via session
+
+Setelah punya session tersimpan (langkah 3), posting seperti ini:
+
+### Mode interaktif
+```bash
+python toolsx.py --session
+```
+
+Tool akan tanya teks, media, pilih akun dari session yang tersimpan → posting.
+
+### Mode cepat (satu baris)
+```bash
+python toolsx.py --session -t "Event Sabtu 19.00!" -m media/images/poster.jpg
+```
+
+### Contoh output
+```
+========================================================
+  Target : 2 akun -> @main, @event
+  Mode   : SESSION (browser cookies)
+  Media  : 1 file -> poster.jpg
+========================================================
+
+[1/2] @main
+   [BERHASIL]  tweet id: (via session)
+[2/2] @event
+   [BERHASIL]  tweet id: (via session)
+
+--------------------------------------------------------
+  Ringkasan: 2 berhasil, 0 gagal (total 2)
+--------------------------------------------------------
+```
+
+## 8. Cara alternatif: API resmi (opsional)
+
+Kalau kamu lebih suka cara resmi (lebih stabil, tidak tergantung session),
+bisa daftar developer di X. Ini **opsional** — kalau sudah pakai session
+(langkah 3-4), bagian ini bisa dilewati.
+
+### 8.1 Daftar sebagai developer (sekali saja per akun)
 
 1. Buka <https://developer.x.com/> → klik **Sign up** atau **Developer Portal**.
 2. Login dengan akun X yang mau didaftarkan.
@@ -91,7 +194,7 @@ kamu pakai.
    - Centang semua persetujuan ToS → **Submit**.
 5. Tunggu email verifikasi (biasanya langsung dapat akses).
 
-### 3.2 Buat Project + App
+### 8.2 Buat Project + App
 
 Setelah masuk ke **Developer Portal** (<https://developer.x.com/en/portal/dashboard>):
 
@@ -106,7 +209,7 @@ Setelah masuk ke **Developer Portal** (<https://developer.x.com/en/portal/dashbo
    jangan dicatat di sini** karena kita butuh regenerate lagi setelah setting
    permission. Klik **Skip / Dashboard**.
 
-### 3.3 Set permission "Read and Write" (WAJIB)
+### 8.3 Set permission "Read and Write" (WAJIB)
 
 Default-nya App cuma bisa baca. Kita perlu ubah supaya bisa posting.
 
@@ -124,7 +227,7 @@ Default-nya App cuma bisa baca. Kita perlu ubah supaya bisa posting.
      - **Website URL**: bisa isi `https://x.com` atau URL project kamu
 3. Klik **Save**.
 
-### 3.4 Ambil 4 kredensial
+### 8.4 Ambil 4 kredensial
 
 Sekarang buka tab **Keys and Tokens** di dashboard App. Ada 4 nilai yang
 perlu dicatat:
@@ -153,7 +256,7 @@ perlu dicatat:
    - Di section **Authentication Tokens** → **Access Token and Secret** →
      klik **Generate**.
    - **PENTING:** pastikan tulisannya `Created with Read and Write permissions`.
-     Kalau masih `Read only`, kamu lupa simpan permission di langkah 3.3 →
+     Kalau masih `Read only`, kamu lupa simpan permission di langkah 8.3 →
      balik, save lagi, baru **Regenerate** Access Token.
    - Lagi-lagi, ini muncul **hanya sekali** — segera salin:
      ```
@@ -161,7 +264,7 @@ perlu dicatat:
      Access Token Secret:  jkl012mno...
      ```
 
-### 3.5 Checklist sebelum lanjut
+### 8.5 Checklist sebelum lanjut
 
 Sebelum lanjut ke langkah 4, pastikan kamu sudah punya 4 nilai ini:
 
@@ -174,13 +277,13 @@ Sebelum lanjut ke langkah 4, pastikan kamu sudah punya 4 nilai ini:
 Kalau ada yang kurang, balik ke langkah terkait. Kalau kredensial hilang
 (belum sempat disalin), tinggal klik **Regenerate** — aman saja.
 
-### 3.6 Ulangi untuk akun lain
+### 8.6 Ulangi untuk akun lain
 
 Untuk akun X ke-2, ke-3, dst:
 
 1. **Log out** dari x.com.
 2. **Login dengan akun berikutnya**.
-3. Ulangi langkah 3.1–3.4.
+3. Ulangi langkah 8.1–3.4.
 
 Hasilnya: tiap akun X akan punya 4 kredensial sendiri yang beda-beda.
 
@@ -190,57 +293,6 @@ Hasilnya: tiap akun X akan punya 4 kredensial sendiri yang beda-beda.
 > **Keamanan:** 4 kredensial ini ibarat username + password. Jangan share di
 > publik, jangan commit ke git. File `accounts.yaml` sudah masuk
 > `.gitignore` jadi aman dari commit tidak sengaja.
-
----
-
-## 4. Isi file `accounts.yaml`
-
-### 4.1 Buat file dari template
-
-```bash
-cp accounts.example.yaml accounts.yaml        # macOS / Linux
-# copy accounts.example.yaml accounts.yaml    # Windows
-```
-
-`accounts.yaml` sudah di-`.gitignore`, jadi kredensial tidak akan ikut
-ter-commit ke GitHub.
-
-### 4.2 Edit isinya
-
-Buka `accounts.yaml` di editor apapun (Notepad, TextEdit, VS Code). Isinya
-seperti ini:
-
-```yaml
-# Jumlah akun yang dipakai secara default (bisa diubah kapan saja).
-default_count: 2
-
-# Folder tempat menaruh media. Ubah kalau mau lokasi lain.
-images_dir: media/images
-videos_dir: media/videos
-
-accounts:
-  - name: main
-    api_key: "GANTI_DENGAN_API_KEY_KAMU"
-    api_secret: "GANTI_DENGAN_API_SECRET_KAMU"
-    access_token: "GANTI_DENGAN_ACCESS_TOKEN_KAMU"
-    access_token_secret: "GANTI_DENGAN_ACCESS_TOKEN_SECRET_KAMU"
-
-  - name: backup
-    api_key: "..."
-    api_secret: "..."
-    access_token: "..."
-    access_token_secret: "..."
-```
-
-**Ganti nilai `YOUR_...` dengan 4 kredensial dari langkah 3.** `name` bebas,
-dipakai sebagai label di CLI (contoh: `--accounts main,backup`).
-
-### 4.3 Aturan format YAML
-
-- Indentasi pakai **spasi**, bukan tab (2 spasi konsisten).
-- Tanda `-` harus diikuti **spasi**: `- name: main` ✅ ; `-name: main` ❌
-- Nilai sebaiknya dibungkus tanda kutip: `api_key: "abc123"`.
-- `name` tiap akun harus **unik**.
 
 ---
 
@@ -418,7 +470,7 @@ python toolsx.py -t "Halo" -m media/images/poster.jpg --dry-run
 
 ---
 
-## 8. Menambah / menghapus akun
+## 9. Menambah / menghapus akun
 
 ### Menambah akun
 
@@ -462,7 +514,7 @@ atau tambahkan `#` di awal tiap baris untuk komentari.
 
 ---
 
-## 9. Mengatur jumlah akun default
+## 10. Mengatur jumlah akun default
 
 Edit `default_count` di `accounts.yaml`:
 
@@ -485,7 +537,7 @@ python toolsx.py -t "Halo" -n 3   # pakai 3 akun pertama sekali ini saja
 
 ---
 
-## 10. Aturan media X
+## 11. Aturan media X
 
 | Tipe | Format | Batas per tweet |
 |---|---|---|
@@ -497,7 +549,7 @@ Tidak boleh mencampur video/GIF dengan gambar lain dalam satu tweet.
 
 ---
 
-## 11. Troubleshooting
+## 12. Troubleshooting
 
 | Error | Penyebab & solusi |
 |---|---|
@@ -506,8 +558,8 @@ Tidak boleh mencampur video/GIF dengan gambar lain dalam satu tweet.
 | `ModuleNotFoundError: No module named 'tweepy'` | Jalankan `pip install -r requirements.txt` |
 | `Accounts file not found: accounts.yaml` | File config belum dibuat → `cp accounts.example.yaml accounts.yaml` |
 | `Config error: Account X is missing required fields` | Ada field kredensial kelupaan/salah ketik di `accounts.yaml` |
-| `401 Unauthorized` saat post | Kredensial salah, atau App belum di-set "Read and Write" di developer portal (lihat langkah 3.3) |
-| `403 Forbidden` saat post | Akun tidak punya permission posting. Cek di developer portal: permission App harus **Read and Write**, dan Access Token harus di-**Regenerate** setelah permission diubah (langkah 3.4) |
+| `401 Unauthorized` saat post | Kredensial salah, atau App belum di-set "Read and Write" di developer portal (lihat langkah 8.3) |
+| `403 Forbidden` saat post | Akun tidak punya permission posting. Cek di developer portal: permission App harus **Read and Write**, dan Access Token harus di-**Regenerate** setelah permission diubah (langkah 8.4) |
 | Access Token tulisannya `Read only` padahal sudah set Read and Write | Setelah ubah permission App, **wajib regenerate Access Token**. Permission lama akan terbawa di Access Token lama |
 | Nama App ditolak saat dibuat | Nama App harus unik di seluruh X. Tambah angka/tahun, misal `numberzero-main-2026` |
 | `Media file not found` | Path media salah. Kalau pakai flag, cek ulang lokasi file |
@@ -525,7 +577,7 @@ error akan muncul di sini.
 
 ---
 
-## 12. Struktur project
+## 13. Struktur project
 
 ```
 numberzero/
@@ -565,7 +617,7 @@ numberzero/
 
 ---
 
-## 13. Catatan penting
+## 14. Catatan penting
 
 Alat ini dimaksudkan untuk penggunaan sah — misal share informasi event ke
 akun-akun yang kamu kelola sendiri (akun pribadi + akun komunitas + akun

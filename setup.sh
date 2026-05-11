@@ -12,6 +12,9 @@ else
     pip install -r requirements.txt
 fi
 
+echo "     -> Install browser untuk login..."
+python3 -m playwright install chromium 2>/dev/null || python -m playwright install chromium 2>/dev/null || true
+
 echo "[2/3] Buat accounts.yaml kalau belum ada..."
 if [ ! -f accounts.yaml ]; then
     cp accounts.example.yaml accounts.yaml

@@ -9,6 +9,12 @@ from pathlib import Path
 
 from .config import Account, ConfigError, filter_accounts, load_config
 from . import colors as c
+from .auth import (
+    get_session_file,
+    list_saved_sessions,
+    login_interactive,
+    SessionAccount,
+)
 from .interactive import (
     ask_accounts,
     ask_media,
@@ -16,7 +22,7 @@ from .interactive import (
     banner,
     confirm,
 )
-from .poster import PostResult, post_tweet
+from .poster import PostResult, post_tweet, post_tweet_session
 
 
 TWEET_MAX_CHARS = 280
@@ -49,6 +55,10 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
                         help="Validate and list targets without posting.")
     parser.add_argument("-i", "--interactive", action="store_true",
                         help="Force interactive mode even if flags are given.")
+    parser.add_argument("--login", action="store_true",
+                        help="Login to X accounts and save sessions (no posting).")
+    parser.add_argument("--session", action="store_true",
+                        help="Post using saved sessions instead of API keys.")
     return parser.parse_args(argv)
 
 
@@ -104,6 +114,129 @@ def _fmt_summary(results: list[PostResult]) -> str:
     return "\n".join(lines)
 
 
+# ---------- login & session helpers ----------
+
+def _handle_login() -> int:
+    """Interactive login flow: add sessions one by one."""
+    print()
+    print(c.header("  Login & Simpan Session"))
+    print(c.muted("=" * 56))
+    print()
+    print("Kamu akan login ke akun X satu per satu lewat browser.")
+    print("Setelah login berhasil, session disimpan otomatis.\n")
+
+    sessions = list_saved_sessions()
+    if sessions:
+        print(f"Session yang sudah tersimpan: "
+              + ", ".join(c.info(f"@{s.name}") for s in sessions))
+        print()
+
+    while True:
+        name = input("Nama akun (ketik nama bebas, misal: main): ").strip()
+        if not name:
+            print(c.warn("Nama tidak boleh kosong."))
+            continue
+
+        try:
+            login_interactive(name)
+            print(c.ok(f"  Login @{name} berhasil & session tersimpan!\n"))
+        except TimeoutError as e:
+            print(c.fail(f"  {e}\n"))
+        except Exception as e:
+            print(c.fail(f"  Error: {e}\n"))
+
+        lagi = input("Login akun lain? [y/N]: ").strip().lower()
+        if lagi not in ("y", "ya", "yes"):
+            break
+
+    sessions = list_saved_sessions()
+    print(f"\nTotal session tersimpan: {c.highlight(str(len(sessions)))}")
+    for s in sessions:
+        status = c.ok("aktif") if s.has_session else c.fail("kosong")
+        print(f"  - @{s.name} ({status})")
+    print(f"\nUntuk posting, jalankan: "
+          + c.info("python toolsx.py --session"))
+    return 0
+
+
+def _handle_session_post(args) -> int:
+    """Post using saved sessions instead of API keys."""
+    sessions = list_saved_sessions()
+    if not sessions:
+        print(c.fail("Belum ada session tersimpan."))
+        print(f"Jalankan dulu: {c.info('python toolsx.py --login')}")
+        return 2
+
+    # Determine text & media
+    text = args.text
+    media_paths = [Path(m) for m in args.media] if args.media else []
+
+    if text is None and not media_paths:
+        # Interactive-ish: ask for text and media
+        print()
+        print(c.header("  Posting via Session"))
+        print(c.muted("=" * 56))
+        print()
+        text = input("Tweet : ").strip()
+        # Simple media ask
+        media_input = input("Path media (kosongkan jika tidak ada): ").strip()
+        if media_input:
+            media_paths = [Path(p.strip()) for p in media_input.split(",")]
+
+    if not (text or "").strip() and not media_paths:
+        print(c.fail("Tidak ada teks maupun media. Batal."), file=sys.stderr)
+        return 2
+
+    text = text or ""
+
+    # Select which sessions to use
+    print(f"\nSession tersedia:")
+    for i, s in enumerate(sessions, 1):
+        status = c.ok("aktif") if s.has_session else c.fail("expired?")
+        print(f"  {c.highlight(str(i))}) @{s.name} ({status})")
+
+    print()
+    pick = input(f"Pilih akun (angka dipisah koma, atau Enter = semua): ").strip()
+    if pick:
+        indices = [int(x.strip()) for x in pick.split(",") if x.strip().isdigit()]
+        selected = [sessions[i - 1] for i in indices if 1 <= i <= len(sessions)]
+    else:
+        selected = sessions
+
+    if not selected:
+        print(c.fail("Tidak ada akun dipilih."))
+        return 2
+
+    # Post
+    print(_fmt_header_session(selected, media_paths))
+    results: list[PostResult] = []
+    total = len(selected)
+    for i, session in enumerate(selected, 1):
+        print(_fmt_progress(i, total, type("A", (), {"name": session.name})))
+        print("   " + c.muted("mengirim via session..."), end="", flush=True)
+        result = post_tweet_session(session.name, session.cookies_file, text, media_paths)
+        print("\r" + _fmt_result(result))
+        results.append(result)
+        if i < total:
+            time.sleep(3)  # Longer delay for session-based to avoid detection
+
+    print(_fmt_summary(results))
+    fail_count = sum(1 for r in results if not r.ok)
+    return 0 if fail_count == 0 else 1
+
+
+def _fmt_header_session(selected: list, media: list[Path]) -> str:
+    names = ", ".join(c.info(f"@{s.name}") for s in selected)
+    bar = c.muted("=" * 56)
+    lines = ["", bar, f"  Target : {c.highlight(str(len(selected)))} akun -> {names}"]
+    lines.append("  Mode   : " + c.info("SESSION (browser cookies)"))
+    if media:
+        media_names = ", ".join(c.info(p.name) for p in media)
+        lines.append(f"  Media  : {c.highlight(str(len(media)))} file -> {media_names}")
+    lines.append(bar)
+    return "\n".join(lines)
+
+
 # ---------- main ----------
 
 def _is_interactive_mode(args: argparse.Namespace) -> bool:
@@ -133,6 +266,14 @@ def _select_accounts_by_flags(
 
 def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
+
+    # --- Login mode: just login and save sessions, no posting ---
+    if args.login:
+        return _handle_login()
+
+    # --- Session posting mode ---
+    if args.session:
+        return _handle_session_post(args)
 
     # Load config up-front; both modes need it.
     try:

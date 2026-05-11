@@ -88,6 +88,28 @@ def _upload_media(api_v1: tweepy.API, paths: Sequence[Path]) -> list[str]:
     return media_ids
 
 
+def post_tweet_session(
+    account_name: str,
+    cookies_file: "Path",
+    text: str,
+    media_paths: Sequence[Path] | None = None,
+) -> PostResult:
+    """Post using saved browser session (no API keys needed)."""
+    from .auth import post_with_session
+
+    media_paths = list(media_paths or [])
+    try:
+        _validate_media(media_paths)
+        result = post_with_session(cookies_file, text, media_paths)
+        if result["ok"]:
+            return PostResult(account=account_name, ok=True, tweet_id="(via session)")
+        return PostResult(account=account_name, ok=False, error=result["error"])
+    except PostError as e:
+        return PostResult(account=account_name, ok=False, error=str(e))
+    except Exception as e:
+        return PostResult(account=account_name, ok=False, error=f"Unexpected: {e}")
+
+
 def post_tweet(
     account: Account,
     text: str,
