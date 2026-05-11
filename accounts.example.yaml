@@ -1,8 +1,6 @@
 # Password default untuk semua akun.
 default_password: "GantiPasswordIni123"
 
-# Daftar email akun X. Satu email = satu akun.
+# Daftar email akun X. Satu email per baris, pisahkan dengan koma.
 # Tool akan login satu per satu dan simpan session-nya.
-emails:
-  - akun1@gmail.com
-  - akun2@gmail.com
+emails: "akun1@gmail.com, akun2@gmail.com"

@@ -53,10 +53,7 @@ Buka accounts.yaml, isi email dan password:
 ```yaml
 default_password: "PasswordKamu123"
 
-emails:
-  - akun1@gmail.com
-  - akun2@gmail.com
-  - akun3@gmail.com
+emails: "akun1@gmail.com, akun2@gmail.com, akun3@gmail.com"
 ```
 
 ---

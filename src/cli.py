@@ -135,7 +135,12 @@ def _handle_login() -> int:
     if config_path.exists():
         with config_path.open("r", encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}
-        emails = data.get("emails", []) or []
+        emails_raw = data.get("emails", []) or []
+        # Support both list format and comma-separated string
+        if isinstance(emails_raw, str):
+            emails = [e.strip() for e in emails_raw.split(",") if e.strip()]
+        else:
+            emails = list(emails_raw)
         default_password = str(data.get("default_password", ""))
         custom_accounts = data.get("accounts_custom", []) or []
 
