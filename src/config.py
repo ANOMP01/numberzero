@@ -17,6 +17,9 @@ REQUIRED_FIELDS = (
     "access_token_secret",
 )
 
+# Fallback when accounts.yaml does not set `default_count`.
+DEFAULT_ACCOUNT_COUNT = 2
+
 
 class ConfigError(Exception):
     """Raised when the accounts config file is missing or malformed."""
@@ -31,8 +34,16 @@ class Account:
     access_token_secret: str
 
 
-def load_accounts(path: str | Path) -> list[Account]:
-    """Load accounts from a YAML file and return a list of Account objects."""
+@dataclass(frozen=True)
+class Config:
+    """Parsed accounts config: the full account list plus defaults."""
+
+    accounts: list[Account]
+    default_count: int
+
+
+def load_config(path: str | Path) -> Config:
+    """Load accounts + settings from a YAML file."""
     path = Path(path)
     if not path.exists():
         raise ConfigError(
@@ -77,7 +88,22 @@ def load_accounts(path: str | Path) -> list[Account]:
             )
         )
 
-    return accounts
+    raw_default = data.get("default_count", DEFAULT_ACCOUNT_COUNT)
+    try:
+        default_count = int(raw_default)
+    except (TypeError, ValueError):
+        raise ConfigError(
+            f"`default_count` must be an integer, got: {raw_default!r}"
+        )
+    if default_count < 1:
+        raise ConfigError("`default_count` must be at least 1.")
+
+    return Config(accounts=accounts, default_count=default_count)
+
+
+def load_accounts(path: str | Path) -> list[Account]:
+    """Backwards-compatible helper: return just the list of accounts."""
+    return load_config(path).accounts
 
 
 def filter_accounts(

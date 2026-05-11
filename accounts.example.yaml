@@ -5,6 +5,10 @@
 # You can add as many accounts as you want. The `name` is a free-form label you
 # use to reference the account in the CLI (e.g. --accounts main,backup).
 
+# How many accounts to post from by default when you don't pass --accounts or
+# --count on the CLI. Change this anytime.
+default_count: 2
+
 accounts:
   - name: main
     api_key: "YOUR_API_KEY"

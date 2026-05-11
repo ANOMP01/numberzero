@@ -7,7 +7,7 @@ import sys
 import time
 from pathlib import Path
 
-from .config import ConfigError, filter_accounts, load_accounts
+from .config import ConfigError, filter_accounts, load_config
 from .poster import PostResult, post_tweet
 
 
@@ -50,7 +50,17 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="",
         help=(
             "Comma-separated list of account names to post from. "
-            "Default: all accounts in the config."
+            "Overrides --count. Default: use --count / default_count."
+        ),
+    )
+    parser.add_argument(
+        "-n",
+        "--count",
+        type=int,
+        default=None,
+        help=(
+            "How many accounts to post from (picks the first N in the config). "
+            "Default: `default_count` in accounts.yaml (falls back to 2)."
         ),
     )
     parser.add_argument(
@@ -93,11 +103,25 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     try:
-        all_accounts = load_accounts(args.config)
-        selected = filter_accounts(
-            all_accounts,
-            [n for n in args.accounts.split(",") if n.strip()],
-        )
+        config = load_config(args.config)
+        all_accounts = config.accounts
+
+        names = [n for n in args.accounts.split(",") if n.strip()]
+        if names:
+            selected = filter_accounts(all_accounts, names)
+        else:
+            count = args.count if args.count is not None else config.default_count
+            if count < 1:
+                print("Error: --count must be at least 1.", file=sys.stderr)
+                return 2
+            if count > len(all_accounts):
+                print(
+                    f"Warning: requested {count} account(s) but only "
+                    f"{len(all_accounts)} configured; using all of them.",
+                    file=sys.stderr,
+                )
+                count = len(all_accounts)
+            selected = all_accounts[:count]
     except ConfigError as e:
         print(f"Config error: {e}", file=sys.stderr)
         return 2

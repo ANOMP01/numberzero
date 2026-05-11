@@ -88,6 +88,20 @@ python -m src.cli -t "Aftermovie event" -m ./aftermovie.mp4
 python -m src.cli -t "Halo" --accounts main,backup
 ```
 
+### Atur berapa akun yang dipakai
+
+Defaultnya ambil dari `default_count` di `accounts.yaml` (template: `2`). Ubah
+nilainya di file itu untuk mengubah default secara permanen. Untuk override
+sekali jalan:
+
+```bash
+python -m src.cli -t "Halo" --count 3       # pakai 3 akun pertama
+python -m src.cli -t "Halo" -n 1            # pakai 1 akun pertama
+```
+
+Catatan: kalau `--accounts` diberikan, `--count` akan diabaikan (nama akun
+lebih spesifik).
+
 ### Dry run (cek dulu tanpa post)
 
 ```bash
@@ -100,7 +114,8 @@ python -m src.cli -t "Halo" --media ./poster.jpg --dry-run
 -t, --text       Teks tweet (boleh kosong kalau ada media)
 -m, --media      Path ke file gambar/video (ulangi untuk multi-gambar)
 -c, --config     Path ke accounts.yaml (default: accounts.yaml)
--a, --accounts   Filter akun, koma-separated (default: semua)
+-a, --accounts   Filter akun, koma-separated (override --count)
+-n, --count      Jumlah akun yang dipakai (default: default_count di config, fallback 2)
 -d, --delay      Detik jeda antar akun (default: 2.0)
     --dry-run    Validasi & list target, tanpa posting
 ```
