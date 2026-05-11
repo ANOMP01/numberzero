@@ -141,6 +141,15 @@ def _handle_login() -> int:
             emails = [e.strip() for e in emails_raw.split(",") if e.strip()]
         else:
             emails = list(emails_raw)
+
+        # Also try emails.txt (one email per line, no formatting needed)
+        emails_txt = Path("emails.txt")
+        if emails_txt.exists():
+            with emails_txt.open("r", encoding="utf-8") as ef:
+                for line in ef:
+                    line = line.strip()
+                    if line and "@" in line and line not in emails:
+                        emails.append(line)
         default_password = str(data.get("default_password", ""))
         custom_accounts = data.get("accounts_custom", []) or []
 

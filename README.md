@@ -42,18 +42,32 @@ python -m playwright install chromium
 
 ## 2. Isi daftar email
 
-Buat file accounts.yaml dari template:
+Buat file emails.txt dari template:
+
+```
+copy emails.example.txt emails.txt
+```
+
+Buka emails.txt, ganti dengan email kamu (satu per baris):
+
+```
+senoie001@dineram.com
+senoie002@dineram.com
+senoie003@dineram.com
+senoie004@dineram.com
+senoie005@dineram.com
+```
+
+Lalu buat accounts.yaml untuk password:
 
 ```
 copy accounts.example.yaml accounts.yaml
 ```
 
-Buka accounts.yaml, isi email dan password:
+Buka accounts.yaml, ganti password:
 
 ```yaml
 default_password: "PasswordKamu123"
-
-emails: "akun1@gmail.com, akun2@gmail.com, akun3@gmail.com"
 ```
 
 ---

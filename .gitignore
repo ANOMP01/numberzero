@@ -1,5 +1,6 @@
 # Secrets / per-user config
 accounts.yaml
+emails.txt
 sessions/*.json
 *.env
 .env
