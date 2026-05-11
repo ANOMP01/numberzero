@@ -68,23 +68,128 @@ yang akan menginstall dependensi dan menyiapkan file config sekaligus.
 
 ## 3. Dapatkan kredensial API X
 
-Setiap akun X butuh kredensial API sendiri dari
+Setiap akun X butuh 4 kredensial API sendiri dari
 <https://developer.x.com/>. Ulangi langkah ini untuk **setiap** akun yang mau
 kamu pakai.
 
-1. **Login ke x.com pakai akun yang mau ditambah**, lalu buka
-   <https://developer.x.com/>.
-2. Buat **Project** + **App** (tier gratis cukup).
-3. Di App → **User authentication settings** → pilih **Read and Write** →
-   save.
-4. Buka tab **Keys and Tokens**, catat **4 nilai** berikut:
-   - `API Key` (consumer key)
-   - `API Key Secret` (consumer secret)
-   - `Access Token`
-   - `Access Token Secret`
+> **PENTING:** Sebelum mulai, **login ke x.com dengan akun yang mau didaftarkan
+> developernya.** Developer portal akan otomatis mengaitkan App ke akun yang
+> sedang login. Misal: kalau kamu lagi login sebagai `@akun_event`, App yang
+> dibuat akan jadi milik `@akun_event`.
+
+### 3.1 Daftar sebagai developer (sekali saja per akun)
+
+1. Buka <https://developer.x.com/> → klik **Sign up** atau **Developer Portal**.
+2. Login dengan akun X yang mau didaftarkan.
+3. Pilih tier gratis: **Free** (sudah cukup untuk share event — 500 post/bulan).
+4. Isi form singkat:
+   - **Use case**: pilih yang paling relevan (misal "Making a bot" atau
+     "Publishing content"). Tidak usah ribet — X cukup longgar untuk tier Free.
+   - **Describe your use case**: tulis singkat, contoh:
+     > "Automating event announcements across my own managed X accounts for
+     > community events."
+   - Centang semua persetujuan ToS → **Submit**.
+5. Tunggu email verifikasi (biasanya langsung dapat akses).
+
+### 3.2 Buat Project + App
+
+Setelah masuk ke **Developer Portal** (<https://developer.x.com/en/portal/dashboard>):
+
+1. Klik **Projects & Apps** di sidebar kiri → **Add project**.
+2. Isi:
+   - **Project name**: bebas, misal `numberzero-main`
+   - **Use case**: pilih yang sama dengan langkah sebelumnya
+   - **Project description**: singkat, misal `Event poster for my accounts`
+3. **Create new App in this project** (atau pilih App yang sudah ada):
+   - **App name**: harus unik global di X, misal `numberzero-main-2026`
+4. Setelah App dibuat, X akan menampilkan kredensial pertama — **tunggu dulu,
+   jangan dicatat di sini** karena kita butuh regenerate lagi setelah setting
+   permission. Klik **Skip / Dashboard**.
+
+### 3.3 Set permission "Read and Write" (WAJIB)
+
+Default-nya App cuma bisa baca. Kita perlu ubah supaya bisa posting.
+
+1. Di dashboard App, cari section **User authentication settings** → klik
+   **Set up** (atau **Edit** kalau sudah pernah).
+2. Isi form:
+   - **App permissions**: pilih **Read and write**
+     (kalau mau bisa DM juga, pilih **Read and write and Direct message** —
+     untuk event sharing cukup Read and write).
+   - **Type of App**: pilih **Web App, Automated App or Bot**
+   - **App info** → isi yang required:
+     - **Callback URI / Redirect URL**: isi apa saja yang valid, misal
+       `https://localhost/` atau `https://example.com/callback`
+       (kita tidak pakai OAuth redirect, ini cuma formality)
+     - **Website URL**: bisa isi `https://x.com` atau URL project kamu
+3. Klik **Save**.
+
+### 3.4 Ambil 4 kredensial
+
+Sekarang buka tab **Keys and Tokens** di dashboard App. Ada 4 nilai yang
+perlu dicatat:
+
+| No | Label di X | Nama di `accounts.yaml` | Cara dapat |
+|---|---|---|---|
+| 1 | **API Key** | `api_key` | Tab Keys and Tokens → section *Consumer Keys* → **View Keys** atau **Regenerate** |
+| 2 | **API Key Secret** | `api_secret` | (sama, muncul bareng API Key) |
+| 3 | **Access Token** | `access_token` | Section *Authentication Tokens* → **Access Token and Secret** → **Generate** |
+| 4 | **Access Token Secret** | `access_token_secret` | (sama, muncul bareng Access Token) |
+
+**Cara detailnya:**
+
+1. **API Key & Secret** (Consumer Keys):
+   - Di section **Consumer Keys**, klik **Regenerate** (atau **View Keys** kalau
+     baru pertama kali).
+   - X akan menampilkan 2 nilai **hanya sekali** — segera salin ke tempat aman:
+     ```
+     API Key:         abc123xyz...
+     API Key Secret:  def456uvw...
+     ```
+   - Kalau ke-close atau lupa, tinggal klik **Regenerate** lagi (tapi ini akan
+     invalidate yang lama).
+
+2. **Access Token & Secret** (Authentication Tokens):
+   - Di section **Authentication Tokens** → **Access Token and Secret** →
+     klik **Generate**.
+   - **PENTING:** pastikan tulisannya `Created with Read and Write permissions`.
+     Kalau masih `Read only`, kamu lupa simpan permission di langkah 3.3 →
+     balik, save lagi, baru **Regenerate** Access Token.
+   - Lagi-lagi, ini muncul **hanya sekali** — segera salin:
+     ```
+     Access Token:         1234567890-ghi789...
+     Access Token Secret:  jkl012mno...
+     ```
+
+### 3.5 Checklist sebelum lanjut
+
+Sebelum lanjut ke langkah 4, pastikan kamu sudah punya 4 nilai ini:
+
+- [ ] API Key (dimulai huruf acak, ~25 karakter)
+- [ ] API Key Secret (~50 karakter)
+- [ ] Access Token (biasanya format: `ANGKA-hurufhuruf`, ~50 karakter)
+- [ ] Access Token Secret (~45 karakter)
+- [ ] Di section Access Token ada tulisan **"Read and Write"**
+
+Kalau ada yang kurang, balik ke langkah terkait. Kalau kredensial hilang
+(belum sempat disalin), tinggal klik **Regenerate** — aman saja.
+
+### 3.6 Ulangi untuk akun lain
+
+Untuk akun X ke-2, ke-3, dst:
+
+1. **Log out** dari x.com.
+2. **Login dengan akun berikutnya**.
+3. Ulangi langkah 3.1–3.4.
+
+Hasilnya: tiap akun X akan punya 4 kredensial sendiri yang beda-beda.
 
 > **Catatan:** tier gratis X API membatasi ~500 post per bulan per app. Untuk
 > share event ini lebih dari cukup.
+
+> **Keamanan:** 4 kredensial ini ibarat username + password. Jangan share di
+> publik, jangan commit ke git. File `accounts.yaml` sudah masuk
+> `.gitignore` jadi aman dari commit tidak sengaja.
 
 ---
 
@@ -401,8 +506,10 @@ Tidak boleh mencampur video/GIF dengan gambar lain dalam satu tweet.
 | `ModuleNotFoundError: No module named 'tweepy'` | Jalankan `pip install -r requirements.txt` |
 | `Accounts file not found: accounts.yaml` | File config belum dibuat → `cp accounts.example.yaml accounts.yaml` |
 | `Config error: Account X is missing required fields` | Ada field kredensial kelupaan/salah ketik di `accounts.yaml` |
-| `401 Unauthorized` saat post | Kredensial salah, atau App belum di-set "Read and Write" di developer portal |
-| `403 Forbidden` saat post | Akun tidak punya permission posting (cek ulang setting app) |
+| `401 Unauthorized` saat post | Kredensial salah, atau App belum di-set "Read and Write" di developer portal (lihat langkah 3.3) |
+| `403 Forbidden` saat post | Akun tidak punya permission posting. Cek di developer portal: permission App harus **Read and Write**, dan Access Token harus di-**Regenerate** setelah permission diubah (langkah 3.4) |
+| Access Token tulisannya `Read only` padahal sudah set Read and Write | Setelah ubah permission App, **wajib regenerate Access Token**. Permission lama akan terbawa di Access Token lama |
+| Nama App ditolak saat dibuat | Nama App harus unik di seluruh X. Tambah angka/tahun, misal `numberzero-main-2026` |
 | `Media file not found` | Path media salah. Kalau pakai flag, cek ulang lokasi file |
 | `Unsupported media type` | Format file tidak didukung. Convert ke mp4/jpg/png dulu |
 | Upload video lama sekali | Wajar — video di-upload chunked. Video 100 MB biasanya butuh 1–3 menit |
