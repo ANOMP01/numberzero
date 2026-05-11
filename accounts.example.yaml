@@ -1,20 +1,26 @@
-# Copy this file to `accounts.yaml` and fill in the credentials for each X account.
-# Each account needs its own set of API keys from https://developer.x.com/
-# (Project -> App -> Keys and Tokens). The app must have "Read and Write" permissions.
-#
-# You can add as many accounts as you want. The `name` is a free-form label you
-# use to reference the account in the CLI (e.g. --accounts main,backup).
-
-# How many accounts to post from by default when you don't pass --accounts or
-# --count on the CLI. Change this anytime.
+# Jumlah akun yang dipakai secara default (bisa diubah kapan saja).
 default_count: 2
 
-# Folder tempat menaruh file media. Bisa path relatif (terhadap folder project)
-# atau absolut. Saat mode interaktif, tool akan membaca isi folder ini dan
-# menampilkannya sebagai menu pilihan.
+# Folder tempat menaruh media. Ubah kalau mau lokasi lain.
 images_dir: media/images
 videos_dir: media/videos
 
+# Password default untuk semua akun (dipakai saat --login otomatis).
+# Ganti kalau password akun-akun kamu beda.
+default_password: "GantiPasswordIni123"
+
+# Daftar email akun X. Satu email = satu akun.
+# Tool akan login satu per satu dan simpan session-nya.
+emails:
+  - akun1@gmail.com
+  - akun2@gmail.com
+
+# (Opsional) Kalau ada akun yang password-nya beda dari default:
+# accounts_custom:
+#   - email: akun3@gmail.com
+#     password: "PasswordBeda456"
+
+# --- Di bawah ini untuk mode API resmi (opsional, bisa diabaikan) ---
 accounts:
   - name: main
     api_key: "YOUR_API_KEY"

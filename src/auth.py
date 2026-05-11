@@ -114,6 +114,120 @@ def login_interactive(name: str) -> Path:
     return cookies_file
 
 
+def login_auto(email: str, password: str, name: str | None = None) -> Path:
+    """Auto-login to X using email + password. Save cookies.
+    
+    Opens a headed browser, fills in credentials automatically.
+    User may still need to handle captcha/2FA manually if prompted.
+    
+    Args:
+        email: Email or username for the X account.
+        password: Password for the X account.
+        name: Label for the session file. Defaults to email prefix.
+    
+    Returns the path to the saved cookies file.
+    """
+    from playwright.sync_api import sync_playwright
+
+    if not name:
+        name = email.split("@")[0]
+
+    cookies_file = get_session_file(name)
+
+    print(f"\n  [{name}] Login otomatis: {email}")
+    print("  Browser akan terbuka. Kalau ada captcha/verifikasi, selesaikan manual.")
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=False)
+        context = browser.new_context(
+            viewport={"width": 1280, "height": 800},
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            ),
+        )
+        page = context.new_page()
+        page.goto(X_LOGIN_URL, wait_until="networkidle")
+        time.sleep(3)
+
+        # Step 1: Fill email/username
+        try:
+            email_input = page.wait_for_selector(
+                'input[autocomplete="username"], input[name="text"]',
+                timeout=15000,
+            )
+            email_input.click()
+            email_input.fill(email)
+            time.sleep(1)
+
+            # Click "Next"
+            next_btn = page.query_selector('[role="button"]:has-text("Next")') or \
+                       page.query_selector('[role="button"]:has-text("Berikutnya")')
+            if next_btn:
+                next_btn.click()
+            else:
+                page.keyboard.press("Enter")
+            time.sleep(3)
+        except Exception:
+            print("  (tidak bisa otomatis isi email — selesaikan manual)")
+
+        # Step 2: Fill password
+        try:
+            pw_input = page.wait_for_selector(
+                'input[name="password"], input[type="password"]',
+                timeout=15000,
+            )
+            pw_input.click()
+            pw_input.fill(password)
+            time.sleep(1)
+
+            # Click "Log in"
+            login_btn = page.query_selector('[data-testid="LoginForm_Login_Button"]') or \
+                        page.query_selector('[role="button"]:has-text("Log in")') or \
+                        page.query_selector('[role="button"]:has-text("Masuk")')
+            if login_btn:
+                login_btn.click()
+            else:
+                page.keyboard.press("Enter")
+            time.sleep(5)
+        except Exception:
+            print("  (tidak bisa otomatis isi password — selesaikan manual)")
+
+        # Step 3: Wait for Home (or user to complete captcha/2FA)
+        print("  Menunggu login berhasil (maks 5 menit)...")
+        max_wait = 300
+        start = time.time()
+        while time.time() - start < max_wait:
+            url = page.url
+            if "/home" in url or "/compose" in url:
+                break
+            try:
+                if page.query_selector('[data-testid="SideNav_NewTweet_Button"]'):
+                    break
+            except Exception:
+                pass
+            time.sleep(2)
+        else:
+            browser.close()
+            raise TimeoutError(
+                f"[{name}] Timeout: login tidak berhasil dalam 5 menit."
+            )
+
+        time.sleep(3)
+
+        # Save cookies
+        cookies = context.cookies()
+        cookies_file.parent.mkdir(exist_ok=True)
+        with cookies_file.open("w", encoding="utf-8") as f:
+            json.dump(cookies, f, indent=2)
+
+        browser.close()
+
+    print(f"  [{name}] Session disimpan: {cookies_file}")
+    return cookies_file
+
+
 def load_cookies(cookies_file: Path) -> list[dict]:
     """Load cookies from a saved session file."""
     with cookies_file.open("r", encoding="utf-8") as f:

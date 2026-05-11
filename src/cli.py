@@ -118,12 +118,26 @@ def _fmt_summary(results: list[PostResult]) -> str:
 
 def _handle_login() -> int:
     """Interactive login flow: add sessions one by one."""
+    import yaml
+    from .auth import login_auto, login_interactive
+
     print()
     print(c.header("  Login & Simpan Session"))
     print(c.muted("=" * 56))
     print()
-    print("Kamu akan login ke akun X satu per satu lewat browser.")
-    print("Setelah login berhasil, session disimpan otomatis.\n")
+
+    # Try to load email list from accounts.yaml
+    config_path = Path("accounts.yaml")
+    emails: list[str] = []
+    default_password = ""
+    custom_accounts: list[dict] = []
+
+    if config_path.exists():
+        with config_path.open("r", encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+        emails = data.get("emails", []) or []
+        default_password = str(data.get("default_password", ""))
+        custom_accounts = data.get("accounts_custom", []) or []
 
     sessions = list_saved_sessions()
     if sessions:
@@ -131,6 +145,51 @@ def _handle_login() -> int:
               + ", ".join(c.info(f"@{s.name}") for s in sessions))
         print()
 
+    # If emails found in config, offer auto-login
+    if emails and default_password:
+        print(f"Ditemukan {c.highlight(str(len(emails)))} email di accounts.yaml")
+        print(f"Password default: {'*' * min(len(default_password), 8)}...")
+        print()
+
+        # Build login list: email -> password
+        login_list: list[tuple[str, str, str]] = []
+        custom_pw_map = {a["email"]: a["password"] for a in custom_accounts if "email" in a and "password" in a}
+
+        for email in emails:
+            pw = custom_pw_map.get(email, default_password)
+            name = email.split("@")[0].replace(".", "_")
+            login_list.append((email, pw, name))
+
+        print("Akun yang akan di-login:")
+        for email, _, name in login_list:
+            existing = get_session_file(name).exists()
+            status = c.muted("(session ada)") if existing else ""
+            print(f"  - {email} → @{name} {status}")
+        print()
+
+        mode = input("Login semua otomatis? [Y/n]: ").strip().lower()
+        if mode in ("", "y", "ya", "yes"):
+            success = 0
+            for email, pw, name in login_list:
+                try:
+                    login_auto(email, pw, name)
+                    print(c.ok(f"  [{name}] Berhasil!\n"))
+                    success += 1
+                except TimeoutError as e:
+                    print(c.fail(f"  {e}\n"))
+                except Exception as e:
+                    print(c.fail(f"  [{name}] Error: {e}\n"))
+                time.sleep(2)
+
+            print(f"\n{c.ok(str(success))}/{len(login_list)} akun berhasil login.")
+            sessions = list_saved_sessions()
+            for s in sessions:
+                status = c.ok("aktif") if s.has_session else c.fail("kosong")
+                print(f"  - @{s.name} ({status})")
+            return 0
+
+    # Fallback: manual login one by one
+    print("Mode manual: login satu per satu lewat browser.\n")
     while True:
         name = input("Nama akun (ketik nama bebas, misal: main): ").strip()
         if not name:
