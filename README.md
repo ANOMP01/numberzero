@@ -26,15 +26,9 @@ python -m playwright install chromium
 
 ---
 
-## 2. Isi emails.txt
+## 2. Edit emails.txt
 
-Buat file emails.txt (copy dari template):
-
-```
-copy emails.example.txt emails.txt
-```
-
-Isi emails.txt seperti ini:
+File emails.txt sudah ada di folder project. Buka dan edit isinya:
 
 ```
 password: cloudin123
@@ -72,14 +66,3 @@ python toolsx.py --session -t "Event Sabtu 19.00!" -m media/images/poster.jpg
 media/images/   ← .jpg .png .webp
 media/videos/   ← .mp4 .mov .gif
 ```
-
----
-
-## Troubleshooting
-
-| Error | Solusi |
-|---|---|
-| File emails.txt tidak ditemukan | copy emails.example.txt emails.txt |
-| Password belum diisi | Tambahkan baris password: xxx di emails.txt |
-| Belum ada session | Jalankan python sessions.py dulu |
-| Session expired | Jalankan python sessions.py ulang |

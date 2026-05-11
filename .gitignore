@@ -1,10 +1,7 @@
-# Secrets / per-user config
-accounts.yaml
-emails.txt
+# Secrets
 sessions/*.json
 *.env
 .env
-accounts.example.yaml
 
 # Python
 __pycache__/
