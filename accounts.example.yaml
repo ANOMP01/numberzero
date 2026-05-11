@@ -1,12 +1,4 @@
-# Jumlah akun yang dipakai secara default (bisa diubah kapan saja).
-default_count: 2
-
-# Folder tempat menaruh media. Ubah kalau mau lokasi lain.
-images_dir: media/images
-videos_dir: media/videos
-
-# Password default untuk semua akun (dipakai saat --login otomatis).
-# Ganti kalau password akun-akun kamu beda.
+# Password default untuk semua akun.
 default_password: "GantiPasswordIni123"
 
 # Daftar email akun X. Satu email = satu akun.
@@ -14,22 +6,3 @@ default_password: "GantiPasswordIni123"
 emails:
   - akun1@gmail.com
   - akun2@gmail.com
-
-# (Opsional) Kalau ada akun yang password-nya beda dari default:
-# accounts_custom:
-#   - email: akun3@gmail.com
-#     password: "PasswordBeda456"
-
-# --- Di bawah ini untuk mode API resmi (opsional, bisa diabaikan) ---
-accounts:
-  - name: main
-    api_key: "YOUR_API_KEY"
-    api_secret: "YOUR_API_SECRET"
-    access_token: "YOUR_ACCESS_TOKEN"
-    access_token_secret: "YOUR_ACCESS_TOKEN_SECRET"
-
-  - name: backup
-    api_key: "YOUR_API_KEY"
-    api_secret: "YOUR_API_SECRET"
-    access_token: "YOUR_ACCESS_TOKEN"
-    access_token_secret: "YOUR_ACCESS_TOKEN_SECRET"
