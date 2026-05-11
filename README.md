@@ -4,6 +4,30 @@ CLI kecil untuk memposting tweet yang sama (teks + gambar/video) dari beberapa
 akun X sekaligus. Cocok untuk share event ke beberapa akun (misal akun
 pribadi + akun komunitas + akun event).
 
+## Cara pakai tercepat (TL;DR)
+
+Sekali setup, lalu tinggal satu perintah:
+
+```bash
+# --- Sekali saja (setup) ---
+bash setup.sh            # macOS / Linux
+# Windows: jalankan dulu "pip install -r requirements.txt"
+#          lalu "copy accounts.example.yaml accounts.yaml"
+# lalu edit accounts.yaml, isi kredensial akun X kamu.
+
+# --- Sehari-hari ---
+./nz                     # macOS / Linux  (mode interaktif, paling mudah)
+nz                       # Windows
+```
+
+Itu saja. Semua langkah (tulis teks → pilih gambar/video → pilih akun → konfirmasi)
+dipandu lewat menu pilihan.
+
+Kalau mau satu-baris (tanpa menu):
+```bash
+./nz -t "Event Sabtu 19.00!" -m ./media/images/poster.jpg
+```
+
 ## Fitur
 
 - Post teks dari banyak akun sekaligus
@@ -82,7 +106,8 @@ Jalankan tanpa argumen, tool akan pandu kamu langkah-demi-langkah dengan menu
 pilihan (tulis teks, pilih media, pilih akun, konfirmasi):
 
 ```bash
-python -m src.cli
+./nz              # macOS / Linux
+nz                # Windows
 ```
 
 Contoh tampilan langkah pilih media:
@@ -110,35 +135,35 @@ Kalau sudah hafal, tinggal pakai flag:
 ### Post teks saja ke semua akun
 
 ```bash
-python -m src.cli --text "Jangan lupa datang ke Meetup Komunitas X, Sabtu jam 19.00!"
+./nz --text "Jangan lupa datang ke Meetup Komunitas X, Sabtu jam 19.00!"
 ```
 
 ### Post teks + 1 gambar
 
 ```bash
-python -m src.cli \
+./nz \
   --text "Poster event minggu ini." \
-  --media ./poster.jpg
+  --media ./media/images/poster.jpg
 ```
 
 ### Post teks + beberapa gambar (maks 4)
 
 ```bash
-python -m src.cli \
+./nz \
   -t "Throwback event kemarin." \
-  -m ./img1.jpg -m ./img2.jpg -m ./img3.jpg
+  -m ./media/images/img1.jpg -m ./media/images/img2.jpg
 ```
 
 ### Post video
 
 ```bash
-python -m src.cli -t "Aftermovie event" -m ./aftermovie.mp4
+./nz -t "Aftermovie event" -m ./media/videos/aftermovie.mp4
 ```
 
 ### Pilih akun tertentu saja
 
 ```bash
-python -m src.cli -t "Halo" --accounts main,backup
+./nz -t "Halo" --accounts main,backup
 ```
 
 ### Atur berapa akun yang dipakai
@@ -148,8 +173,8 @@ nilainya di file itu untuk mengubah default secara permanen. Untuk override
 sekali jalan:
 
 ```bash
-python -m src.cli -t "Halo" --count 3       # pakai 3 akun pertama
-python -m src.cli -t "Halo" -n 1            # pakai 1 akun pertama
+./nz -t "Halo" --count 3       # pakai 3 akun pertama
+./nz -t "Halo" -n 1            # pakai 1 akun pertama
 ```
 
 Catatan: kalau `--accounts` diberikan, `--count` akan diabaikan (nama akun
@@ -158,7 +183,7 @@ lebih spesifik).
 ### Dry run (cek dulu tanpa post)
 
 ```bash
-python -m src.cli -t "Halo" --media ./poster.jpg --dry-run
+./nz -t "Halo" --media ./media/images/poster.jpg --dry-run
 ```
 
 ### Opsi lengkap
@@ -184,6 +209,9 @@ python -m src.cli -t "Halo" --media ./poster.jpg --dry-run
 
 ```
 numberzero/
+├── nz                      # shortcut CLI (macOS/Linux)
+├── nz.bat                  # shortcut CLI (Windows)
+├── setup.sh                # installer sekali jalan (macOS/Linux)
 ├── accounts.example.yaml   # template kredensial + setting folder media
 ├── requirements.txt
 ├── media/

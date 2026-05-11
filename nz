@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# numberzero shortcut for macOS/Linux.
+# Usage:
+#   ./nz                     # interactive mode
+#   ./nz -t "Halo" -m img    # flag mode (same flags as `python -m src.cli`)
+#
+# First run? Make it executable: chmod +x nz
+
+set -e
+
+# Resolve the directory this script lives in, so it works from anywhere.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
+# Prefer python3 if available, else fall back to python.
+if command -v python3 >/dev/null 2>&1; then
+    PY=python3
+elif command -v python >/dev/null 2>&1; then
+    PY=python
+else
+    echo "Error: Python tidak ditemukan. Install Python 3 dulu."
+    exit 1
+fi
+
+exec "$PY" -m src.cli "$@"
