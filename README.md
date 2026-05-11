@@ -54,6 +54,64 @@ ikut ke-commit.
 
 ## Penggunaan
 
+### Mode interaktif (paling mudah)
+
+Jalankan tanpa argumen, tool akan pandu kamu langkah-demi-langkah dengan menu
+pilihan (tulis teks, pilih media, pilih akun, konfirmasi):
+
+```bash
+python -m src.cli
+```
+
+Contoh tampilannya:
+
+```
+========================================================
+  numberzero  |  multi-account X event poster
+========================================================
+
+[Langkah 1/4] Tulis isi tweet
+--------------------------------------------------------
+Tweet : Meetup Komunitas X Sabtu 19.00, RSVP di bio!
+
+[Langkah 2/4] Lampirkan media?
+--------------------------------------------------------
+  * 1) Tidak, teks saja
+    2) Ya, 1 gambar
+    3) Ya, beberapa gambar (maks 4)
+    4) Ya, 1 video / GIF
+Pilihan [1]: 2
+  Path file #1: ./poster.jpg
+
+[Langkah 3/4] Pilih akun yang akan memposting
+--------------------------------------------------------
+Akun yang terdaftar di accounts.yaml:
+    1) @main
+    2) @event
+    3) @komunitas
+
+  * 1) Pakai default (2 akun pertama)
+    2) Pilih jumlah akun (ambil dari urutan teratas)
+    3) Pilih akun spesifik (ketik nomor/nama)
+    4) Semua akun
+Pilihan [1]: 3
+Ketik nomor/nama dipisah koma (contoh: 1,3 atau main,event): main,event
+
+[Langkah 4/4] Konfirmasi sebelum posting
+--------------------------------------------------------
+Ringkasan:
+  Teks   : Meetup Komunitas X Sabtu 19.00, RSVP di bio!
+  Media  : 1 file
+           - poster.jpg
+  Target : 2 akun -> @main, @event
+
+Lanjutkan posting sekarang? [Y/n]:
+```
+
+### Mode cepat (flag)
+
+Kalau sudah hafal, tinggal pakai flag:
+
 ### Post teks saja ke semua akun
 
 ```bash
