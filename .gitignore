@@ -4,6 +4,7 @@ emails.txt
 sessions/*.json
 *.env
 .env
+accounts.example.yaml
 
 # Python
 __pycache__/

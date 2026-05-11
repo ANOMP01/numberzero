@@ -1,3 +1,5 @@
+password: cloudin123
+
 senoie001@dineram.com
 senoie002@dineram.com
 senoie003@dineram.com

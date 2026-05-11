@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
 """sessions.py - Login/daftar akun X dan simpan session.
 
-Jalankan file ini untuk login ke semua akun yang terdaftar di accounts.yaml.
-Session yang tersimpan akan dipakai oleh toolsx.py untuk posting.
+Baca email dari emails.txt (satu email per baris).
+Baris pertama yang dimulai dengan "password:" adalah password default.
 
 Usage:
-    python sessions.py           # login semua akun dari accounts.yaml
-    python sessions.py --manual  # login manual satu per satu (tanpa file email)
+    python sessions.py           # login semua akun dari emails.txt
+    python sessions.py --manual  # login manual satu per satu
 """
 
 import sys
 import time
 from pathlib import Path
-
-import yaml
 
 from src.auth import (
     get_session_file,
@@ -24,6 +22,37 @@ from src.auth import (
 from src import colors as c
 
 
+EMAILS_FILE = Path("emails.txt")
+
+
+def _read_emails_file() -> tuple[str, list[str]]:
+    """Read emails.txt. Returns (password, list_of_emails).
+    
+    Format file:
+        password: xxx
+        email1@domain.com
+        email2@domain.com
+    """
+    if not EMAILS_FILE.exists():
+        return "", []
+
+    password = ""
+    emails = []
+
+    with EMAILS_FILE.open("r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            # Line starts with "password:" -> extract password
+            if line.lower().startswith("password:"):
+                password = line.split(":", 1)[1].strip().strip('"').strip("'")
+            elif "@" in line:
+                emails.append(line)
+
+    return password, emails
+
+
 def main() -> int:
     print()
     print(c.header("  sessions.py  |  Login & Simpan Session X"))
@@ -31,68 +60,35 @@ def main() -> int:
     print()
 
     # Check for --manual flag
-    manual_mode = "--manual" in sys.argv
-
-    if manual_mode:
+    if "--manual" in sys.argv:
         return _manual_login()
 
-    # Auto mode: read from accounts.yaml
-    config_path = Path("accounts.yaml")
-    if not config_path.exists():
-        print(c.fail("File accounts.yaml tidak ditemukan."))
-        print("Buat dulu dari template:")
-        print("  cp accounts.example.yaml accounts.yaml")
-        print("  lalu isi email dan password di dalamnya.")
+    # Read emails.txt
+    if not EMAILS_FILE.exists():
+        print(c.fail(f"File emails.txt tidak ditemukan."))
+        print()
+        print("Buat file emails.txt dengan isi seperti ini:")
+        print()
+        print("  password: PasswordKamu123")
+        print("  akun1@gmail.com")
+        print("  akun2@gmail.com")
+        print("  akun3@gmail.com")
+        print()
+        print("Atau copy dari template:")
+        print("  copy emails.example.txt emails.txt")
         return 2
 
-    with config_path.open("r", encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-
-    emails_raw = data.get("emails", []) or []
-    # Support both list format and comma-separated string
-    if isinstance(emails_raw, str):
-        emails = [e.strip() for e in emails_raw.split(",") if e.strip()]
-    else:
-        emails = list(emails_raw)
-
-    # Also try emails.txt (one email per line, no formatting needed)
-    emails_txt = Path("emails.txt")
-    if emails_txt.exists():
-        with emails_txt.open("r", encoding="utf-8") as ef:
-            for line in ef:
-                line = line.strip()
-                if line and "@" in line and line not in emails:
-                    emails.append(line)
-    default_password = str(data.get("default_password", ""))
-    custom_accounts = data.get("accounts_custom", []) or []
+    password, emails = _read_emails_file()
 
     if not emails:
-        print(c.warn("Tidak ada email di accounts.yaml."))
-        print("Tambahkan daftar email seperti ini di accounts.yaml:\n")
-        print("  emails:")
-        print('    - akun1@gmail.com')
-        print('    - akun2@gmail.com')
-        print()
-        print("Atau jalankan mode manual: python sessions.py --manual")
+        print(c.fail("Tidak ada email di emails.txt."))
+        print("Isi file emails.txt dengan email (satu per baris).")
         return 2
 
-    if not default_password:
-        print(c.fail("default_password belum diisi di accounts.yaml."))
-        print('Tambahkan: default_password: "PasswordKamu123"')
+    if not password:
+        print(c.fail("Password belum diisi di emails.txt."))
+        print("Tambahkan baris pertama: password: PasswordKamu123")
         return 2
-
-    # Build login list
-    custom_pw_map = {
-        a["email"]: a["password"]
-        for a in custom_accounts
-        if isinstance(a, dict) and "email" in a and "password" in a
-    }
-
-    login_list: list[tuple[str, str, str]] = []
-    for email in emails:
-        pw = custom_pw_map.get(email, default_password)
-        name = email.split("@")[0].replace(".", "_")
-        login_list.append((email, pw, name))
 
     # Show existing sessions
     sessions = list_saved_sessions()
@@ -102,14 +98,15 @@ def main() -> int:
         print()
 
     # Show what will be logged in
-    print(f"Ditemukan {c.highlight(str(len(login_list)))} email di accounts.yaml:")
+    print(f"Ditemukan {c.highlight(str(len(emails)))} email di emails.txt:")
     print()
-    for email, _, name in login_list:
+    for email in emails:
+        name = email.split("@")[0].replace(".", "_")
         existing = get_session_file(name).exists()
         status = c.muted(" (sudah ada session)") if existing else ""
         print(f"  {c.highlight('•')} {email} → {c.info('@' + name)}{status}")
     print()
-    print(f"Password default: {c.muted('*' * 8)}")
+    print(f"Password: {c.muted('*' * 8)}")
     print()
 
     # Confirm
@@ -122,10 +119,11 @@ def main() -> int:
     print()
     success = 0
     failed = 0
-    for i, (email, pw, name) in enumerate(login_list, 1):
-        print(c.step_label(f"[{i}/{len(login_list)}]") + f" {email}")
+    for i, email in enumerate(emails, 1):
+        name = email.split("@")[0].replace(".", "_")
+        print(c.step_label(f"[{i}/{len(emails)}]") + f" {email}")
         try:
-            login_auto(email, pw, name)
+            login_auto(email, password, name)
             print(c.ok(f"  ✓ @{name} berhasil!\n"))
             success += 1
         except TimeoutError as e:
@@ -135,8 +133,7 @@ def main() -> int:
             print(c.fail(f"  ✗ Error: {e}\n"))
             failed += 1
 
-        # Delay between accounts
-        if i < len(login_list):
+        if i < len(emails):
             time.sleep(2)
 
     # Summary
