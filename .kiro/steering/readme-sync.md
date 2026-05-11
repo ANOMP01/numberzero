@@ -15,7 +15,7 @@ Update README bila menyentuh hal-hal berikut:
 - Nama/path entry point (contoh: `python toolsx.py`, `./nz`, `nz.bat`)
 - Tambah/hapus CLI flag atau ubah default-nya
 - Tambah/hapus/rename file atau folder (terutama yang user-facing)
-- Ubah format `accounts.yaml` atau tambah setting baru
+- Ubah format `emails.txt` atau tambah setting baru
 - Ubah struktur folder media (`media/images/`, `media/videos/`)
 - Tambah fitur baru yang bisa dipakai user (misal mode, opsi, shortcut)
 - Ubah alur mode interaktif (langkah/menu/pertanyaan)

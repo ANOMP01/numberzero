@@ -5,7 +5,7 @@
 set -e
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-echo "[1/3] Install dependensi Python..."
+echo "[1/2] Install dependensi Python..."
 if command -v pip3 >/dev/null 2>&1; then
     pip3 install -r requirements.txt
 else
@@ -15,17 +15,13 @@ fi
 echo "     -> Install browser untuk login..."
 python3 -m playwright install chromium 2>/dev/null || python -m playwright install chromium 2>/dev/null || true
 
-echo "[2/3] Buat accounts.yaml kalau belum ada..."
-if [ ! -f accounts.yaml ]; then
-    cp accounts.example.yaml accounts.yaml
-    echo "     -> accounts.yaml dibuat. Edit file itu & isi kredensialnya."
+echo "[2/2] Cek emails.txt..."
+if [ ! -f emails.txt ]; then
+    echo "     -> emails.txt belum ada. Edit file emails.txt dan isi email + password."
 else
-    echo "     -> accounts.yaml sudah ada, dilewati."
+    echo "     -> emails.txt sudah ada."
 fi
-
-echo "[3/3] Bikin 'nz' bisa langsung dijalankan..."
-chmod +x nz
 
 echo
 echo "Selesai!"
-echo "Sekarang tinggal ketik:  ./nz"
+echo "Jalankan: python sessions.py"

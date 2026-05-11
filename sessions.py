@@ -73,9 +73,6 @@ def main() -> int:
         print("  akun1@gmail.com")
         print("  akun2@gmail.com")
         print("  akun3@gmail.com")
-        print()
-        print("Atau copy dari template:")
-        print("  copy emails.example.txt emails.txt")
         return 2
 
     password, emails = _read_emails_file()

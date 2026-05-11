@@ -54,7 +54,7 @@ def load_config(path: str | Path) -> Config:
     if not path.exists():
         raise ConfigError(
             f"Accounts file not found: {path}. "
-            f"Copy accounts.example.yaml to accounts.yaml and fill in credentials."
+            f"This file is only needed for API mode. Use --session instead."
         )
 
     with path.open("r", encoding="utf-8") as f:

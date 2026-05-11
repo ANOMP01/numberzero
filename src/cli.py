@@ -10,9 +10,7 @@ from pathlib import Path
 from .config import Account, ConfigError, filter_accounts, load_config
 from . import colors as c
 from .auth import (
-    get_session_file,
     list_saved_sessions,
-    login_interactive,
     SessionAccount,
 )
 from .interactive import (
@@ -114,130 +112,14 @@ def _fmt_summary(results: list[PostResult]) -> str:
     return "\n".join(lines)
 
 
-# ---------- login & session helpers ----------
-
-def _handle_login() -> int:
-    """Interactive login flow: add sessions one by one."""
-    import yaml
-    from .auth import login_auto, login_interactive
-
-    print()
-    print(c.header("  Login & Simpan Session"))
-    print(c.muted("=" * 56))
-    print()
-
-    # Try to load email list from accounts.yaml
-    config_path = Path("accounts.yaml")
-    emails: list[str] = []
-    default_password = ""
-    custom_accounts: list[dict] = []
-
-    if config_path.exists():
-        with config_path.open("r", encoding="utf-8") as f:
-            data = yaml.safe_load(f) or {}
-        emails_raw = data.get("emails", []) or []
-        # Support both list format and comma-separated string
-        if isinstance(emails_raw, str):
-            emails = [e.strip() for e in emails_raw.split(",") if e.strip()]
-        else:
-            emails = list(emails_raw)
-
-        # Also try emails.txt (one email per line, no formatting needed)
-        emails_txt = Path("emails.txt")
-        if emails_txt.exists():
-            with emails_txt.open("r", encoding="utf-8") as ef:
-                for line in ef:
-                    line = line.strip()
-                    if line and "@" in line and line not in emails:
-                        emails.append(line)
-        default_password = str(data.get("default_password", ""))
-        custom_accounts = data.get("accounts_custom", []) or []
-
-    sessions = list_saved_sessions()
-    if sessions:
-        print(f"Session yang sudah tersimpan: "
-              + ", ".join(c.info(f"@{s.name}") for s in sessions))
-        print()
-
-    # If emails found in config, offer auto-login
-    if emails and default_password:
-        print(f"Ditemukan {c.highlight(str(len(emails)))} email di accounts.yaml")
-        print(f"Password default: {'*' * min(len(default_password), 8)}...")
-        print()
-
-        # Build login list: email -> password
-        login_list: list[tuple[str, str, str]] = []
-        custom_pw_map = {a["email"]: a["password"] for a in custom_accounts if "email" in a and "password" in a}
-
-        for email in emails:
-            pw = custom_pw_map.get(email, default_password)
-            name = email.split("@")[0].replace(".", "_")
-            login_list.append((email, pw, name))
-
-        print("Akun yang akan di-login:")
-        for email, _, name in login_list:
-            existing = get_session_file(name).exists()
-            status = c.muted("(session ada)") if existing else ""
-            print(f"  - {email} → @{name} {status}")
-        print()
-
-        mode = input("Login semua otomatis? [Y/n]: ").strip().lower()
-        if mode in ("", "y", "ya", "yes"):
-            success = 0
-            for email, pw, name in login_list:
-                try:
-                    login_auto(email, pw, name)
-                    print(c.ok(f"  [{name}] Berhasil!\n"))
-                    success += 1
-                except TimeoutError as e:
-                    print(c.fail(f"  {e}\n"))
-                except Exception as e:
-                    print(c.fail(f"  [{name}] Error: {e}\n"))
-                time.sleep(2)
-
-            print(f"\n{c.ok(str(success))}/{len(login_list)} akun berhasil login.")
-            sessions = list_saved_sessions()
-            for s in sessions:
-                status = c.ok("aktif") if s.has_session else c.fail("kosong")
-                print(f"  - @{s.name} ({status})")
-            return 0
-
-    # Fallback: manual login one by one
-    print("Mode manual: login satu per satu lewat browser.\n")
-    while True:
-        name = input("Nama akun (ketik nama bebas, misal: main): ").strip()
-        if not name:
-            print(c.warn("Nama tidak boleh kosong."))
-            continue
-
-        try:
-            login_interactive(name)
-            print(c.ok(f"  Login @{name} berhasil & session tersimpan!\n"))
-        except TimeoutError as e:
-            print(c.fail(f"  {e}\n"))
-        except Exception as e:
-            print(c.fail(f"  Error: {e}\n"))
-
-        lagi = input("Login akun lain? [y/N]: ").strip().lower()
-        if lagi not in ("y", "ya", "yes"):
-            break
-
-    sessions = list_saved_sessions()
-    print(f"\nTotal session tersimpan: {c.highlight(str(len(sessions)))}")
-    for s in sessions:
-        status = c.ok("aktif") if s.has_session else c.fail("kosong")
-        print(f"  - @{s.name} ({status})")
-    print(f"\nUntuk posting, jalankan: "
-          + c.info("python toolsx.py --session"))
-    return 0
-
+# ---------- session helpers ----------
 
 def _handle_session_post(args) -> int:
     """Post using saved sessions instead of API keys."""
     sessions = list_saved_sessions()
     if not sessions:
         print(c.fail("Belum ada session tersimpan."))
-        print(f"Jalankan dulu: {c.info('python toolsx.py --login')}")
+        print(f"Jalankan dulu: {c.info('python sessions.py')}")
         return 2
 
     # Determine text & media
@@ -342,9 +224,8 @@ def main(argv: list[str] | None = None) -> int:
 
     # --- Login mode: redirect to sessions.py ---
     if args.login:
-        print(c.warn("Untuk login, jalankan file terpisah:"))
+        print(c.warn("Untuk login, jalankan:"))
         print(f"  {c.info('python sessions.py')}")
-        print(f"  {c.info('python sessions.py --manual')}  (mode manual)")
         return 0
 
     # --- Session posting mode ---
