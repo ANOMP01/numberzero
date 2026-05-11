@@ -542,6 +542,7 @@ numberzero/
 ├── src/
 │   ├── __init__.py
 │   ├── cli.py              # logika CLI + formatter log
+│   ├── colors.py           # helper warna ANSI untuk log
 │   ├── config.py           # load & validasi accounts.yaml
 │   ├── interactive.py      # menu step-by-step
 │   └── poster.py           # upload media + create tweet ke X
@@ -553,6 +554,8 @@ numberzero/
 - **`toolsx.py`** — entry point, yang dipanggil saat `python toolsx.py`.
 - **`src/cli.py`** — parse argumen command-line, atur alur mode interaktif vs
   mode flag, format log hasil posting.
+- **`src/colors.py`** — helper pewarnaan ANSI. Auto-detect TTY; bisa di-force
+  dengan `FORCE_COLOR=1` atau dimatikan dengan `NO_COLOR=1`.
 - **`src/config.py`** — baca `accounts.yaml`, validasi format, cegah duplikat
   nama akun.
 - **`src/interactive.py`** — semua menu step-by-step (tulis teks, pilih

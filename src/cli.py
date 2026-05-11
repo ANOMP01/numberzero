@@ -8,6 +8,7 @@ import time
 from pathlib import Path
 
 from .config import Account, ConfigError, filter_accounts, load_config
+from . import colors as c
 from .interactive import (
     ask_accounts,
     ask_media,
@@ -54,47 +55,52 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 # ---------- log formatting ----------
 
 def _fmt_header(selected: list[Account], media: list[Path], dry_run: bool) -> str:
-    names = ", ".join(f"@{a.name}" for a in selected)
-    lines = [
-        "",
-        "=" * 56,
-        f"  Target : {len(selected)} akun -> {names}",
-    ]
+    names = ", ".join(c.info(f"@{a.name}") for a in selected)
+    bar = c.muted("=" * 56)
+    lines = ["", bar, f"  Target : {c.highlight(str(len(selected)))} akun -> {names}"]
     if media:
-        lines.append(f"  Media  : {len(media)} file -> "
-                     + ", ".join(p.name for p in media))
+        media_names = ", ".join(c.info(p.name) for p in media)
+        lines.append(f"  Media  : {c.highlight(str(len(media)))} file -> {media_names}")
     if dry_run:
-        lines.append("  Mode   : DRY RUN (tidak benar-benar diposting)")
-    lines.append("=" * 56)
+        lines.append("  Mode   : " + c.warn("DRY RUN (tidak benar-benar diposting)"))
+    lines.append(bar)
     return "\n".join(lines)
 
 
 def _fmt_progress(i: int, total: int, account: Account) -> str:
-    return f"\n[{i}/{total}] @{account.name}"
+    label = c.step_label(f"[{i}/{total}]")
+    return f"\n{label} {c.info('@' + account.name)}"
 
 
 def _fmt_result(result: PostResult) -> str:
     if result.ok:
-        return f"   [BERHASIL]  tweet id: {result.tweet_id}"
-    return f"   [GAGAL]     {result.error}"
+        badge = c.ok("[BERHASIL]")
+        return f"   {badge}  tweet id: {c.muted(str(result.tweet_id))}"
+    badge = c.fail("[GAGAL]   ")
+    return f"   {badge}  {c.fail(result.error or '')}"
 
 
 def _fmt_summary(results: list[PostResult]) -> str:
-    ok = [r for r in results if r.ok]
-    fail = [r for r in results if not r.ok]
+    ok_list = [r for r in results if r.ok]
+    fail_list = [r for r in results if not r.ok]
+    bar = c.muted("-" * 56)
+
+    ok_count = c.ok(str(len(ok_list))) if ok_list else str(len(ok_list))
+    fail_count = c.fail(str(len(fail_list))) if fail_list else str(len(fail_list))
+    total = len(results)
+
     lines = [
         "",
-        "-" * 56,
-        f"  Ringkasan: {len(ok)} berhasil, {len(fail)} gagal "
-        f"(total {len(results)})",
+        bar,
+        f"  Ringkasan: {ok_count} berhasil, {fail_count} gagal (total {total})",
     ]
-    if ok:
-        lines.append("  Berhasil : "
-                     + ", ".join(f"@{r.account}" for r in ok))
-    if fail:
-        lines.append("  Gagal    : "
-                     + ", ".join(f"@{r.account}" for r in fail))
-    lines.append("-" * 56)
+    if ok_list:
+        names = ", ".join(c.info(f"@{r.account}") for r in ok_list)
+        lines.append(f"  {c.ok('Berhasil')} : {names}")
+    if fail_list:
+        names = ", ".join(c.info(f"@{r.account}") for r in fail_list)
+        lines.append(f"  {c.fail('Gagal')}    : {names}")
+    lines.append(bar)
     return "\n".join(lines)
 
 
@@ -118,8 +124,9 @@ def _select_accounts_by_flags(
     if count < 1:
         raise ConfigError("--count must be at least 1.")
     if count > len(config.accounts):
-        print(f"  (catatan) diminta {count} akun, hanya {len(config.accounts)} "
-              f"tersedia -> pakai semua.", file=sys.stderr)
+        print(c.warn(f"  (catatan) diminta {count} akun, hanya "
+                     f"{len(config.accounts)} tersedia -> pakai semua."),
+              file=sys.stderr)
         count = len(config.accounts)
     return config.accounts[:count]
 
@@ -131,7 +138,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         config = load_config(args.config)
     except ConfigError as e:
-        print(f"Config error: {e}", file=sys.stderr)
+        print(c.fail(f"Config error: {e}"), file=sys.stderr)
         return 2
 
     # --- Interactive mode ---
@@ -142,11 +149,11 @@ def main(argv: list[str] | None = None) -> int:
         selected = ask_accounts(config)
 
         if not text.strip() and not media_paths:
-            print("Tidak ada teks maupun media. Batal.", file=sys.stderr)
+            print(c.fail("Tidak ada teks maupun media. Batal."), file=sys.stderr)
             return 2
 
         if not confirm(text, media_paths, selected):
-            print("Dibatalkan.")
+            print(c.warn("Dibatalkan."))
             return 0
 
     # --- Flag mode ---
@@ -155,31 +162,31 @@ def main(argv: list[str] | None = None) -> int:
         media_paths = [Path(m) for m in args.media]
 
         if not text.strip() and not media_paths:
-            print("Error: beri --text dan/atau --media.", file=sys.stderr)
+            print(c.fail("Error: beri --text dan/atau --media."), file=sys.stderr)
             return 2
         if len(text) > TWEET_MAX_CHARS:
-            print(f"Error: teks {len(text)} karakter "
-                  f"(maks {TWEET_MAX_CHARS}).", file=sys.stderr)
+            print(c.fail(f"Error: teks {len(text)} karakter "
+                         f"(maks {TWEET_MAX_CHARS})."), file=sys.stderr)
             return 2
 
         try:
             selected = _select_accounts_by_flags(args, config)
         except ConfigError as e:
-            print(f"Config error: {e}", file=sys.stderr)
+            print(c.fail(f"Config error: {e}"), file=sys.stderr)
             return 2
 
     # --- Actually post (or dry-run) ---
     print(_fmt_header(selected, media_paths, args.dry_run))
 
     if args.dry_run:
-        print("\nDry run selesai. Tidak ada yang diposting.\n")
+        print("\n" + c.warn("Dry run selesai. Tidak ada yang diposting.") + "\n")
         return 0
 
     results: list[PostResult] = []
     total = len(selected)
     for i, account in enumerate(selected, 1):
         print(_fmt_progress(i, total, account))
-        print("   mengirim...", end="", flush=True)
+        print("   " + c.muted("mengirim..."), end="", flush=True)
         result = post_tweet(account, text, media_paths)
         # overwrite the "mengirim..." line with the real status
         print("\r" + _fmt_result(result))

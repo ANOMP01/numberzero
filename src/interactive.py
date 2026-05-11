@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from . import colors as c
 from .config import Account, Config
 
 
@@ -19,19 +20,20 @@ VIDEO_EXTS = {".mp4", ".mov"}
 # ---------- small display helpers ----------
 
 def _hr(char: str = "-", width: int = 56) -> str:
-    return char * width
+    return c.muted(char * width)
 
 
 def banner() -> None:
+    line = "=" * 56
     print()
-    print(_hr("="))
-    print("  numberzero  |  multi-account X event poster")
-    print(_hr("="))
+    print(c.muted(line))
+    print(c.header("  numberzero  |  multi-account X event poster"))
+    print(c.muted(line))
 
 
 def step(n: int, total: int, title: str) -> None:
     print()
-    print(f"[Langkah {n}/{total}] {title}")
+    print(c.step_label(f"[Langkah {n}/{total}]") + " " + c.paint(title, c.BOLD))
     print(_hr())
 
 
@@ -51,13 +53,13 @@ def _ask_int(prompt: str, default: int, minimum: int = 1, maximum: int | None = 
         try:
             n = int(raw)
         except ValueError:
-            print("  -> harus berupa angka. Coba lagi.")
+            print(c.warn("  -> harus berupa angka. Coba lagi."))
             continue
         if n < minimum:
-            print(f"  -> minimal {minimum}. Coba lagi.")
+            print(c.warn(f"  -> minimal {minimum}. Coba lagi."))
             continue
         if maximum is not None and n > maximum:
-            print(f"  -> maksimal {maximum}. Coba lagi.")
+            print(c.warn(f"  -> maksimal {maximum}. Coba lagi."))
             continue
         return n
 
@@ -65,31 +67,36 @@ def _ask_int(prompt: str, default: int, minimum: int = 1, maximum: int | None = 
 def _ask_yes_no(prompt: str, default: bool = False) -> bool:
     default_str = "Y/n" if default else "y/N"
     while True:
-        raw = input(f"{prompt} [{default_str}]: ").strip().lower()
+        raw = input(f"{prompt} [{c.highlight(default_str)}]: ").strip().lower()
         if not raw:
             return default
         if raw in ("y", "ya", "yes"):
             return True
         if raw in ("n", "no", "tidak"):
             return False
-        print("  -> ketik 'y' atau 'n'.")
+        print(c.warn("  -> ketik 'y' atau 'n'."))
 
 
 def _ask_choice(prompt: str, options: list[str], default: int = 1) -> int:
     """Show numbered menu; return the 1-based index the user picked."""
     for i, opt in enumerate(options, 1):
-        marker = "*" if i == default else " "
-        print(f"  {marker} {i}) {opt}")
+        if i == default:
+            marker = c.highlight("*")
+            num = c.highlight(str(i))
+        else:
+            marker = " "
+            num = str(i)
+        print(f"  {marker} {num}) {opt}")
     while True:
         raw = _ask(prompt, str(default))
         try:
             choice = int(raw)
         except ValueError:
-            print("  -> ketik angka pilihan.")
+            print(c.warn("  -> ketik angka pilihan."))
             continue
         if 1 <= choice <= len(options):
             return choice
-        print(f"  -> pilih antara 1 dan {len(options)}.")
+        print(c.warn(f"  -> pilih antara 1 dan {len(options)}."))
 
 
 # ---------- each step ----------
@@ -101,7 +108,7 @@ def ask_text() -> str:
     while True:
         text = input("Tweet : ").strip()
         if len(text) > 280:
-            print(f"  -> kepanjangan ({len(text)}/280). Coba ringkas.")
+            print(c.fail(f"  -> kepanjangan ({len(text)}/280). Coba ringkas."))
             continue
         return text
 
@@ -127,16 +134,17 @@ def _list_media_files(folder: Path, allowed_exts: set[str]) -> list[Path]:
 
 
 def _show_file_menu(files: list[Path], folder: Path) -> None:
-    print(f"File tersedia di {folder}/:")
+    print(f"File tersedia di {c.info(str(folder) + '/')}:")
     if not files:
-        print("  (folder kosong)")
+        print(c.muted("  (folder kosong)"))
         return
     for i, p in enumerate(files, 1):
         try:
             size = _human_size(p.stat().st_size)
         except OSError:
             size = "?"
-        print(f"  {i:>2}) {p.name}  ({size})")
+        num = c.highlight(f"{i:>2}")
+        print(f"  {num}) {p.name}  {c.muted('(' + size + ')')}")
 
 
 def _pick_files(files: list[Path], prompt: str, max_pick: int) -> list[Path]:
@@ -153,12 +161,12 @@ def _pick_files(files: list[Path], prompt: str, max_pick: int) -> list[Path]:
         bad = False
         for tok in tokens:
             if not tok.isdigit():
-                print(f"  -> bukan angka: {tok!r}")
+                print(c.warn(f"  -> bukan angka: {tok!r}"))
                 bad = True
                 break
             idx = int(tok)
             if not (1 <= idx <= len(files)):
-                print(f"  -> {idx} di luar jangkauan 1..{len(files)}")
+                print(c.warn(f"  -> {idx} di luar jangkauan 1..{len(files)}"))
                 bad = True
                 break
             if idx in seen:
@@ -169,7 +177,7 @@ def _pick_files(files: list[Path], prompt: str, max_pick: int) -> list[Path]:
         if bad or not picked:
             continue
         if len(picked) > max_pick:
-            print(f"  -> maksimal {max_pick} file. Pilih lagi.")
+            print(c.warn(f"  -> maksimal {max_pick} file. Pilih lagi."))
             continue
         return picked
 
@@ -192,7 +200,7 @@ def ask_media(config: Config) -> list[Path]:
         print()
         _show_file_menu(files, folder)
         if not files:
-            print(f"Taruh gambar di {folder}/ lalu jalankan lagi.")
+            print(c.warn(f"Taruh gambar di {folder}/ lalu jalankan lagi."))
             return []
         print()
         return _pick_files(
@@ -207,7 +215,7 @@ def ask_media(config: Config) -> list[Path]:
     print()
     _show_file_menu(files, folder)
     if not files:
-        print(f"Taruh video/GIF di {folder}/ lalu jalankan lagi.")
+        print(c.warn(f"Taruh video/GIF di {folder}/ lalu jalankan lagi."))
         return []
     print()
     return _pick_files(
@@ -223,7 +231,7 @@ def ask_accounts(config: Config) -> list[Account]:
     accounts = config.accounts
     print("Akun yang terdaftar di accounts.yaml:")
     for i, a in enumerate(accounts, 1):
-        print(f"    {i}) @{a.name}")
+        print(f"    {c.highlight(str(i))}) " + c.info(f"@{a.name}"))
     print()
 
     options = [
@@ -252,7 +260,7 @@ def ask_accounts(config: Config) -> list[Account]:
         picked = _resolve_account_tokens(raw, accounts)
         if picked:
             return picked
-        print("  -> tidak ada akun yang cocok. Coba lagi.")
+        print(c.warn("  -> tidak ada akun yang cocok. Coba lagi."))
 
 
 def _resolve_account_tokens(raw: str, accounts: list[Account]) -> list[Account]:
@@ -270,7 +278,7 @@ def _resolve_account_tokens(raw: str, accounts: list[Account]) -> list[Account]:
             account = by_name[tok]
 
         if account is None:
-            print(f"  -> tidak dikenal: {tok!r} (lewati)")
+            print(c.warn(f"  -> tidak dikenal: {tok!r} (lewati)"))
             continue
         if account.name in seen:
             continue
@@ -281,18 +289,19 @@ def _resolve_account_tokens(raw: str, accounts: list[Account]) -> list[Account]:
 
 def confirm(text: str, media: list[Path], targets: list[Account]) -> bool:
     step(4, 4, "Konfirmasi sebelum posting")
-    print("Ringkasan:")
-    preview = text if text else "(tidak ada teks)"
-    if len(preview) > 80:
-        preview = preview[:77] + "..."
-    print(f"  Teks   : {preview}")
-    if media:
-        print(f"  Media  : {len(media)} file")
-        for p in media:
-            print(f"           - {p}")
+    print(c.paint("Ringkasan:", c.BOLD))
+    if text:
+        preview = text if len(text) <= 80 else text[:77] + "..."
+        print(f"  Teks   : {preview}")
     else:
-        print("  Media  : (tidak ada)")
-    print(f"  Target : {len(targets)} akun -> "
-          f"{', '.join('@' + a.name for a in targets)}")
+        print("  Teks   : " + c.muted("(tidak ada teks)"))
+    if media:
+        print(f"  Media  : {c.highlight(str(len(media)))} file")
+        for p in media:
+            print(c.muted(f"           - {p}"))
+    else:
+        print("  Media  : " + c.muted("(tidak ada)"))
+    targets_str = ", ".join(c.info("@" + a.name) for a in targets)
+    print(f"  Target : {c.highlight(str(len(targets)))} akun -> {targets_str}")
     print()
     return _ask_yes_no("Lanjutkan posting sekarang?", default=True)
